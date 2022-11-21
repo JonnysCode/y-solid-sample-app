@@ -1,6 +1,6 @@
 import { getYjsValue, syncedStore } from '@syncedstore/core';
 import { WebrtcProvider } from 'y-webrtc';
-import { SolidPersistence } from './solid';
+import { SolidPersistence, login as solidLogin } from './solid';
 
 console.log('store.ts');
 
@@ -22,7 +22,7 @@ export const solid = () => {
 };
 
 export const login = async () => {
-  await SolidPersistence.login();
+  await solidLogin();
   console.log('awaited login');
 };
 

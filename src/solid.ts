@@ -2,7 +2,6 @@ import { Observable } from 'lib0/observable';
 
 import {
   handleIncomingRedirect,
-  login,
   fetch,
   getDefaultSession,
   Session,
@@ -21,6 +20,22 @@ import {
 import { RDF, SCHEMA_INRUPT } from '@inrupt/vocab-common-rdf';
 
 const POD_URL = 'https://truthless.inrupt.net';
+
+export const login = async (): Promise<Session> => {
+  await handleIncomingRedirect();
+
+  let session = getDefaultSession();
+
+  if (!session.info.isLoggedIn) {
+    await session.login({
+      oidcIssuer: 'https://inrupt.net/',
+      redirectUrl: window.location.href,
+      clientName: 'Yjs Solid Demo',
+    });
+  }
+
+  return session;
+};
 
 export class SolidPersistence extends Observable<string> {
   public name: string;
@@ -55,26 +70,15 @@ export class SolidPersistence extends Observable<string> {
     doc.on('update', this.storeUpdate);
   }
 
-  public static async create(name: string, doc: any) {
-    const session = await SolidPersistence.login();
-
-    return new SolidPersistence(name, doc, session);
-  }
-
-  public static async login() {
+  public static async create(
+    name: string,
+    doc: any
+  ): Promise<SolidPersistence> {
     await handleIncomingRedirect();
 
     let session = getDefaultSession();
 
-    if (!session.info.isLoggedIn) {
-      await session.login({
-        oidcIssuer: 'https://inrupt.net/',
-        redirectUrl: window.location.href,
-        clientName: 'Yjs Solid Demo',
-      });
-    }
-
-    return session;
+    return new SolidPersistence(name, doc, session);
   }
 
   public async loadDataset(
