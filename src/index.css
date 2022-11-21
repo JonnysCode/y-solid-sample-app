@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .btn-primary {
+    @apply text-white font-bold px-4 py-2 rounded bg-primary-600 hover:bg-primary-500;
+  }
+
+  .btn-outline-neutral {
+    @apply text-neutral-400 font-bold px-4 py-2 rounded border-2 border-neutral-400 hover:bg-neutral-400 hover:text-neutral-900;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+}

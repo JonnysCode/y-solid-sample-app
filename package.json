@@ -1,0 +1,65 @@
+{
+  "name": "todo-react",
+  "version": "0.4.2",
+  "private": true,
+  "dependencies": {
+    "@inrupt/lit-generated-vocab-common": "^0.3.11",
+    "@inrupt/solid-client-authn-node": "^1.12.2",
+    "@inrupt/solid-ui-react": "^2.8.2",
+    "@inrupt/vocab-common-rdf": "^1.0.5",
+    "@syncedstore/core": "^0.4.2",
+    "@syncedstore/react": "^0.4.2",
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.11.47",
+    "@types/react": "^18.0.15",
+    "@types/react-dom": "^18.0.6",
+    "lib0": "^0.2.53",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.4.4",
+    "y-webrtc": "^10.1.8",
+    "yjs": "^13.5.13"
+  },
+  "scripts": {
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
+    "eject": "craco eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "workspaces": {
+    "nohoist": [
+      "**"
+    ],
+    "packages": [
+      "."
+    ]
+  },
+  "devDependencies": {
+    "@craco/craco": "^7.0.0",
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.4.19",
+    "tailwindcss": "^3.2.4"
+  }
+}
