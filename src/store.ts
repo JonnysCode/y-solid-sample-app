@@ -40,7 +40,7 @@ export const datasetInfo = () => {
 };
 
 export const saveDataset = async () => {
-  await solidPersistence.saveDataset();
+  await solidPersistence.newReadingList();
   console.log('awaited saveDataset');
 };
 

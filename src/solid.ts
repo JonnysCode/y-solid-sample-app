@@ -17,20 +17,23 @@ import {
   saveSolidDatasetAt,
   getSolidDataset,
 } from '@inrupt/solid-client';
-import { RDF, SCHEMA_INRUPT } from '@inrupt/vocab-common-rdf';
+import { RDF, SCHEMA_INRUPT, AS } from '@inrupt/vocab-common-rdf';
 
 const POD_URL = 'https://truthless.inrupt.net';
 
-export const login = async (): Promise<Session> => {
+export const login = async (
+  oidcIssuer = 'https://inrupt.net/',
+  clientName = 'SyncedStore'
+): Promise<Session> => {
   await handleIncomingRedirect();
 
   let session = getDefaultSession();
 
   if (!session.info.isLoggedIn) {
     await session.login({
-      oidcIssuer: 'https://inrupt.net/',
+      oidcIssuer: oidcIssuer,
       redirectUrl: window.location.href,
-      clientName: 'Yjs Solid Demo',
+      clientName: clientName,
     });
   }
 
@@ -81,9 +84,7 @@ export class SolidPersistence extends Observable<string> {
     return new SolidPersistence(name, doc, session);
   }
 
-  public async loadDataset(
-    url = 'https://truthless.inrupt.net/yjs/documents/'
-  ) {
+  public async loadDataset(url = 'https://truthless.inrupt.net/yjs/documents') {
     let dataset = await getSolidDataset(
       url,
       { fetch: fetch } // fetch function from authenticated session
@@ -117,7 +118,7 @@ export class SolidPersistence extends Observable<string> {
 
   public async saveDataset(
     dataset = this.createDataset(),
-    url = 'https://truthless.inrupt.net/yjs/documents/'
+    url = `${POD_URL}/yjs/documents`
   ) {
     const savedSolidDataset = await saveSolidDatasetAt(
       url,
@@ -131,7 +132,7 @@ export class SolidPersistence extends Observable<string> {
   }
 
   public async addThingToDataset() {
-    let dataset = await this.loadDataset();
+    let dataset = createSolidDataset();
 
     const newThing = buildThing(createThing({ name: 'yjs2' }))
       .addStringNoLocale(SCHEMA_INRUPT.name, 'SyncedStore Demo')
@@ -145,5 +146,42 @@ export class SolidPersistence extends Observable<string> {
     await this.saveDataset(newDataset);
 
     console.log('new thing saved');
+  }
+
+  public async newReadingList() {
+    const titles = [
+      'The Lord of the Rings',
+      'The Hobbit',
+      "Harry Potter and the Philosopher's Stone",
+      'And Then There Were None',
+      'Dream of the Red Chamber',
+      'The Little Prince',
+    ];
+
+    let readingListUrl = `${POD_URL}/reading-list/myList`;
+    let myReadingList = createSolidDataset();
+
+    // Add titles to the Dataset
+    let i = 0;
+    titles.forEach((title) => {
+      if (title.trim() !== '') {
+        let item = createThing({ name: 'title' + i });
+        item = addUrl(item, RDF.type, AS.Article);
+        item = addStringNoLocale(item, SCHEMA_INRUPT.name, title);
+        myReadingList = setThing(myReadingList, item);
+        i++;
+      }
+    });
+
+    try {
+      // Save the SolidDataset
+      let savedReadingList = await saveSolidDatasetAt(
+        readingListUrl,
+        myReadingList,
+        { fetch: fetch }
+      );
+    } catch (error) {
+      console.log('ERROR saving the reading list', error);
+    }
   }
 }
