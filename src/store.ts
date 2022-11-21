@@ -10,7 +10,7 @@ export type Todo = {
 };
 
 export const globalStore = syncedStore({ todos: [] as Todo[] });
-new WebrtcProvider('id', getYjsValue(globalStore) as any); // sync via webrtc
+//new WebrtcProvider('id', getYjsValue(globalStore) as any); // sync via webrtc
 
 const solidPersistence = await SolidPersistence.create(
   'todos',
@@ -37,6 +37,7 @@ export const loadDataset = async () => {
 
 export const datasetInfo = () => {
   console.log('Dataset info: ', solidPersistence.dataset);
+  console.log('Doc info: ', solidPersistence.doc.toJSON());
 };
 
 export const saveDataset = async () => {

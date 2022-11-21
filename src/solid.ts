@@ -1,4 +1,6 @@
 import { Observable } from 'lib0/observable';
+import * as Y from 'yjs';
+import { fromBase64, fromUint8Array, toUint8Array } from 'js-base64';
 
 import {
   handleIncomingRedirect,
@@ -14,10 +16,13 @@ import {
   createThing,
   setThing,
   getThingAll,
+  getStringNoLocale,
+  getThing,
   saveSolidDatasetAt,
   getSolidDataset,
 } from '@inrupt/solid-client';
 import { RDF, SCHEMA_INRUPT, AS } from '@inrupt/vocab-common-rdf';
+import { Todo } from './store';
 
 const POD_URL = 'https://truthless.inrupt.net';
 
@@ -42,14 +47,14 @@ export const login = async (
 
 export class SolidPersistence extends Observable<string> {
   public name: string;
-  public doc: any;
+  public doc: Y.Doc;
   public loggedIn: boolean;
   public session: Session;
   public dataset: any;
 
   private storeUpdate = (update: any, origin: any) => {};
 
-  private constructor(name: string, doc: any, session: Session) {
+  private constructor(name: string, doc: Y.Doc, session: Session) {
     console.log('SolidPersistence constructor');
     super();
 
@@ -84,7 +89,7 @@ export class SolidPersistence extends Observable<string> {
     return new SolidPersistence(name, doc, session);
   }
 
-  public async loadDataset(url = 'https://truthless.inrupt.net/yjs/documents') {
+  public async loadDataset(url = `${POD_URL}/yjs/todolist`) {
     let dataset = await getSolidDataset(
       url,
       { fetch: fetch } // fetch function from authenticated session
@@ -92,9 +97,24 @@ export class SolidPersistence extends Observable<string> {
 
     this.dataset = dataset;
 
-    const docs = getThingAll(dataset);
+    const todoThing: any = getThing(dataset, `${url}#todolist1`);
 
-    console.log('docs loaded', docs);
+    const todoValue: any = getStringNoLocale(todoThing, SCHEMA_INRUPT.value);
+
+    console.log('todoThing', todoThing);
+    console.log('todoValue', todoValue);
+
+    const update = toUint8Array(todoValue);
+    const state = Y.decodeStateVector(update);
+
+    console.log('update', update);
+    console.log('state', state);
+
+    const doc1 = new Y.Doc();
+    Y.applyUpdate(doc1, update);
+    Y.applyUpdate(this.doc, update);
+
+    console.log('doc1 json', doc1.toJSON());
 
     console.log('dataset synced', this.dataset);
     this.emit('loaded', [this]);
@@ -116,10 +136,7 @@ export class SolidPersistence extends Observable<string> {
     return newDataset;
   }
 
-  public async saveDataset(
-    dataset = this.createDataset(),
-    url = `${POD_URL}/yjs/documents`
-  ) {
+  public async saveDataset(dataset: any, url = `${POD_URL}/yjs/todolist`) {
     const savedSolidDataset = await saveSolidDatasetAt(
       url,
       dataset,
@@ -134,18 +151,24 @@ export class SolidPersistence extends Observable<string> {
   public async addThingToDataset() {
     let dataset = createSolidDataset();
 
-    const newThing = buildThing(createThing({ name: 'yjs2' }))
+    console.log('current doc state', this.doc.toJSON());
+
+    const newTodo = buildThing(createThing({ name: `todolist1` }))
       .addStringNoLocale(SCHEMA_INRUPT.name, 'SyncedStore Demo')
       .addUrl(RDF.type, 'https://schema.org/DigitalDocument')
+      .addUrl(RDF.type, 'https://docs.yjs.dev/api/y.doc')
+      .addStringNoLocale(
+        SCHEMA_INRUPT.value,
+        fromUint8Array(Y.encodeStateAsUpdate(this.doc))
+      )
       .build();
+    dataset = setThing(dataset, newTodo);
 
-    let newDataset = setThing(dataset, newThing);
+    console.log('newDataset', dataset);
 
-    console.log('newDataset', newDataset);
+    await this.saveDataset(dataset);
 
-    await this.saveDataset(newDataset);
-
-    console.log('new thing saved');
+    console.log('new todolist saved');
   }
 
   public async newReadingList() {
