@@ -17,6 +17,7 @@ import {
   setThing,
   getThingAll,
   getStringNoLocale,
+  setStringNoLocale,
   getThing,
   saveSolidDatasetAt,
   getSolidDataset,
@@ -86,16 +87,24 @@ const createYDocThing = (name: string, doc: Y.Doc) => {
   return thing;
 };
 
-const getYDocValue = (dataset: any, datasetUrl: string, name: string) => {
-  const thing = getThing(dataset, `${datasetUrl}#${name}`);
+const updateYDocThing = (thing: any, doc: Y.Doc) => {
+  thing = setStringNoLocale(
+    thing,
+    SCHEMA_INRUPT.value,
+    fromUint8Array(Y.encodeStateAsUpdate(doc))
+  );
 
-  if (thing) {
-    const value = getStringNoLocale(thing, SCHEMA_INRUPT.value);
+  return thing;
+};
 
-    return value ? toUint8Array(value) : null;
-  }
+const getYDocThing = (dataset: any, datasetUrl: string, name: string) => {
+  return getThing(dataset, datasetUrl + '#' + name);
+};
 
-  return null;
+const getYDocValue = (thing: any, name: string) => {
+  const value = getStringNoLocale(thing, SCHEMA_INRUPT.value);
+
+  return value ? toUint8Array(value) : null;
 };
 
 export class SolidPersistence extends Observable<string> {
@@ -104,6 +113,7 @@ export class SolidPersistence extends Observable<string> {
   public loggedIn: boolean;
   public session: Session;
   public dataset: any;
+  public thing: any;
   public datasetUrl: string;
 
   private storeUpdate = (update: any, origin: any) => {};
@@ -113,15 +123,17 @@ export class SolidPersistence extends Observable<string> {
     doc: Y.Doc,
     session: Session,
     dataset: any,
-    datasetUrl: string
+    datasetUrl: string,
+    thing: any
   ) {
     super();
 
     this.name = name;
     this.doc = doc;
 
-    this.dataset = createSolidDataset();
+    this.dataset = dataset;
     this.datasetUrl = datasetUrl;
+    this.thing = thing;
 
     this.session = session;
     this.loggedIn = this.session.info.isLoggedIn;
@@ -129,13 +141,25 @@ export class SolidPersistence extends Observable<string> {
     this.storeUpdate = (update: any, origin: any) => {
       console.log('store update', update, origin, this);
       if (this.loggedIn) {
-        console.log('logged in');
       } else {
         console.log('not logged in');
       }
     };
 
-    doc.on('update', this.storeUpdate);
+    this.doc.on('update', (update, origin) => {
+      // ignore updates applied by this provider
+      if (origin !== this) {
+        // this update was produced either locally or by another provider.
+        this.emit('update', [update]);
+      } else {
+        console.log('Update is from this provider');
+      }
+    });
+
+    // listen to an event that fires when a remote update is received
+    this.on('update', (update: Uint8Array) => {
+      this.update(update);
+    });
   }
 
   public static async create(
@@ -144,7 +168,7 @@ export class SolidPersistence extends Observable<string> {
     autoLogin = true,
     datasetUrl = `${POD_URL}/yjs/docs`
   ): Promise<SolidPersistence> {
-    let session: Session, dataset: any;
+    let session: Session, dataset: any, thing: any;
 
     // LOGIN
     if (autoLogin) {
@@ -159,7 +183,8 @@ export class SolidPersistence extends Observable<string> {
     let value;
     if (dataset) {
       console.log('Dataset found', dataset);
-      value = getYDocValue(dataset, datasetUrl, name);
+      thing = getYDocThing(dataset, datasetUrl, name);
+      value = getYDocValue(thing, name);
     } else {
       dataset = createSolidDataset();
     }
@@ -168,12 +193,24 @@ export class SolidPersistence extends Observable<string> {
       console.log('Y.Doc found', value);
       Y.applyUpdate(doc, value);
     } else {
-      let thing = createYDocThing(name, doc);
+      thing = createYDocThing(name, doc);
       dataset = setThing(dataset, thing);
       await saveDataset(dataset, datasetUrl);
     }
 
-    return new SolidPersistence(name, doc, session, dataset, datasetUrl);
+    return new SolidPersistence(name, doc, session, dataset, datasetUrl, thing);
+  }
+
+  public async update(update: Uint8Array) {
+    console.log('update', update, this);
+    Y.applyUpdate(this.doc, update, this);
+    if (this.loggedIn) {
+      this.thing = updateYDocThing(this.thing, this.doc);
+      this.dataset = setThing(this.dataset, this.thing);
+      await saveDataset(this.dataset, this.datasetUrl);
+    } else {
+      console.log('Cannot sync update - not logged in');
+    }
   }
 
   public async loadDataset(url = `${POD_URL}/yjs/docs`) {
@@ -196,15 +233,9 @@ export class SolidPersistence extends Observable<string> {
     return dataset;
   }
 
-  public async saveDataset(dataset: any, url = `${POD_URL}/yjs/todolist`) {
-    const savedSolidDataset = await saveSolidDatasetAt(
-      url,
-      dataset,
-      { fetch: fetch } // fetch from authenticated Session
-    );
-    console.log('dataset saved', savedSolidDataset);
-
-    this.dataset = dataset;
+  public async saveDataset() {
+    this.dataset = await saveDataset(this.dataset, this.datasetUrl);
+    console.log('dataset saved', this.dataset);
     this.emit('saved', [this]);
   }
 
@@ -226,7 +257,7 @@ export class SolidPersistence extends Observable<string> {
 
     console.log('newDataset', dataset);
 
-    await this.saveDataset(dataset);
+    await this.saveDataset();
 
     console.log('new todolist saved');
   }
