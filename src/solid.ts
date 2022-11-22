@@ -116,7 +116,8 @@ export class SolidPersistence extends Observable<string> {
   public thing: any;
   public datasetUrl: string;
 
-  private storeUpdate = (update: any, origin: any) => {};
+  private isUpdating: boolean;
+  private hasFurtherUpdates: boolean;
 
   private constructor(
     name: string,
@@ -138,27 +139,36 @@ export class SolidPersistence extends Observable<string> {
     this.session = session;
     this.loggedIn = this.session.info.isLoggedIn;
 
-    this.storeUpdate = (update: any, origin: any) => {
-      console.log('store update', update, origin, this);
-      if (this.loggedIn) {
-      } else {
-        console.log('not logged in');
-      }
-    };
+    this.isUpdating = false;
+    this.hasFurtherUpdates = false;
 
     this.doc.on('update', (update, origin) => {
       // ignore updates applied by this provider
       if (origin !== this) {
         // this update was produced either locally or by another provider.
-        this.emit('update', [update]);
+        if (this.isUpdating) {
+          // this provider is currently applying updates from the store.
+          this.hasFurtherUpdates = true;
+        } else {
+          this.emit('update', [update]);
+        }
       } else {
         console.log('Update is from this provider');
       }
     });
 
     // listen to an event that fires when a remote update is received
-    this.on('update', (update: Uint8Array) => {
-      this.update(update);
+    this.on('update', async (update: Uint8Array) => {
+      this.isUpdating = true;
+      await this.update(update);
+
+      // if there are more updates in the meantime, update to the latest state
+      while (this.hasFurtherUpdates) {
+        this.hasFurtherUpdates = false;
+        await this.update(update);
+      }
+
+      this.isUpdating = false;
     });
   }
 

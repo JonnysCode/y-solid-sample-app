@@ -2,8 +2,6 @@ import { getYjsValue, syncedStore } from '@syncedstore/core';
 import { WebrtcProvider } from 'y-webrtc';
 import { SolidPersistence, login as solidLogin } from './solid';
 
-console.log('store.ts');
-
 export type Todo = {
   title: string;
   completed: boolean;
