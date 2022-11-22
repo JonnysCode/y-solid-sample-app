@@ -182,7 +182,6 @@ export class SolidPersistence extends Observable<string> {
     dataset = await loadDataset(datasetUrl);
     let value;
     if (dataset) {
-      console.log('Dataset found', dataset);
       thing = getYDocThing(dataset, datasetUrl, name);
       value = getYDocValue(thing, name);
     } else {
@@ -190,7 +189,6 @@ export class SolidPersistence extends Observable<string> {
     }
 
     if (value) {
-      console.log('Y.Doc found', value);
       Y.applyUpdate(doc, value);
     } else {
       thing = createYDocThing(name, doc);
@@ -202,100 +200,29 @@ export class SolidPersistence extends Observable<string> {
   }
 
   public async update(update: Uint8Array) {
-    console.log('update', update, this);
     Y.applyUpdate(this.doc, update, this);
     if (this.loggedIn) {
       this.thing = updateYDocThing(this.thing, this.doc);
       this.dataset = setThing(this.dataset, this.thing);
       await saveDataset(this.dataset, this.datasetUrl);
+      await this.fetchPod(); // dataset and thing need to be fetched again after update (avoid 409)
     } else {
       console.log('Cannot sync update - not logged in');
     }
   }
 
-  public async loadDataset(url = `${POD_URL}/yjs/docs`) {
-    let dataset = await getSolidDataset(
-      url,
-      { fetch: fetch } // fetch function from authenticated session
-    );
-
-    this.dataset = dataset;
-
-    const todoThing: any = getThing(dataset, `${url}#${this.name}`);
-    const todoValue: any = getStringNoLocale(todoThing, SCHEMA_INRUPT.value);
-
-    const update = toUint8Array(todoValue);
-
-    Y.applyUpdate(this.doc, update);
-
-    console.log('dataset loaded and doc updated', this.dataset, this.doc);
-    this.emit('loaded', [this]);
-    return dataset;
+  public async fetchPod() {
+    if (this.loggedIn) {
+      this.dataset = await loadDataset(this.datasetUrl);
+      this.thing = getYDocThing(this.dataset, this.datasetUrl, this.name);
+    } else {
+      console.log('Cannot fetch - not logged in');
+    }
   }
 
   public async saveDataset() {
     this.dataset = await saveDataset(this.dataset, this.datasetUrl);
     console.log('dataset saved', this.dataset);
     this.emit('saved', [this]);
-  }
-
-  public async addThingToDataset() {
-    let dataset = createSolidDataset();
-
-    console.log('current doc state', this.doc.toJSON());
-
-    const newTodo = buildThing(createThing({ name: this.name }))
-      .addStringNoLocale(SCHEMA_INRUPT.name, 'SyncedStore Demo')
-      .addUrl(RDF.type, 'https://schema.org/DigitalDocument')
-      .addUrl(RDF.type, 'https://docs.yjs.dev/api/y.doc')
-      .addStringNoLocale(
-        SCHEMA_INRUPT.value,
-        fromUint8Array(Y.encodeStateAsUpdate(this.doc))
-      )
-      .build();
-    dataset = setThing(dataset, newTodo);
-
-    console.log('newDataset', dataset);
-
-    await this.saveDataset();
-
-    console.log('new todolist saved');
-  }
-
-  public async newReadingList() {
-    const titles = [
-      'The Lord of the Rings',
-      'The Hobbit',
-      "Harry Potter and the Philosopher's Stone",
-      'And Then There Were None',
-      'Dream of the Red Chamber',
-      'The Little Prince',
-    ];
-
-    let readingListUrl = `${POD_URL}/reading-list/myList`;
-    let myReadingList = createSolidDataset();
-
-    // Add titles to the Dataset
-    let i = 0;
-    titles.forEach((title) => {
-      if (title.trim() !== '') {
-        let item = createThing({ name: 'title' + i });
-        item = addUrl(item, RDF.type, AS.Article);
-        item = addStringNoLocale(item, SCHEMA_INRUPT.name, title);
-        myReadingList = setThing(myReadingList, item);
-        i++;
-      }
-    });
-
-    try {
-      // Save the SolidDataset
-      let savedReadingList = await saveSolidDatasetAt(
-        readingListUrl,
-        myReadingList,
-        { fetch: fetch }
-      );
-    } catch (error) {
-      console.log('ERROR saving the reading list', error);
-    }
   }
 }

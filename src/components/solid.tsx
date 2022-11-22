@@ -1,12 +1,4 @@
-import {
-  login,
-  sessionInfo,
-  loadDataset,
-  datasetInfo,
-  saveDataset,
-  addThingToDataset,
-  solid,
-} from '../store';
+import { login, sessionInfo, datasetInfo, solid } from '../store';
 
 export default function Solid() {
   return (
@@ -19,17 +11,8 @@ export default function Solid() {
         <button className='btn-primary' onClick={() => sessionInfo()}>
           Session Info
         </button>
-        <button className='btn-primary' onClick={() => loadDataset()}>
-          Load Dataset
-        </button>
         <button className='btn-primary' onClick={() => datasetInfo()}>
           Dataset Info
-        </button>
-        <button className='btn-primary' onClick={() => saveDataset()}>
-          Save Dataset
-        </button>
-        <button className='btn-primary' onClick={() => addThingToDataset()}>
-          Add Thing
         </button>
         <button className='btn-primary' onClick={() => solid()}>
           Solid

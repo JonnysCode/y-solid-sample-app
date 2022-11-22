@@ -30,22 +30,7 @@ export const sessionInfo = () => {
   console.log('Session info: ', solidPersistence.session.info);
 };
 
-export const loadDataset = async () => {
-  await solidPersistence.loadDataset();
-  console.log('awaited loadDataset');
-};
-
 export const datasetInfo = () => {
   console.log('Dataset info: ', solidPersistence.dataset);
   console.log('Doc info: ', solidPersistence.doc.toJSON());
-};
-
-export const saveDataset = async () => {
-  await solidPersistence.newReadingList();
-  console.log('awaited saveDataset');
-};
-
-export const addThingToDataset = async () => {
-  await solidPersistence.addThingToDataset();
-  console.log('awaited addThingToDataset');
 };
