@@ -13,7 +13,7 @@ export const globalStore = syncedStore({ todos: [] as Todo[] });
 //new WebrtcProvider('id', getYjsValue(globalStore) as any); // sync via webrtc
 
 const solidPersistence = await SolidPersistence.create(
-  'todos',
+  'todos1',
   getYjsValue(globalStore) as any
 );
 
