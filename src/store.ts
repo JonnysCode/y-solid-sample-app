@@ -1,5 +1,6 @@
-import { getYjsValue, syncedStore } from '@syncedstore/core';
+import { getYjsValue, syncedStore, getYjsDoc } from '@syncedstore/core';
 import { WebrtcProvider } from 'y-webrtc';
+import { IndexeddbPersistence } from 'y-indexeddb';
 import { SolidPersistence, login as solidLogin } from './solid';
 
 export type Todo = {
@@ -7,13 +8,20 @@ export type Todo = {
   completed: boolean;
 };
 
+const fileName = 'todos1';
+
 export const globalStore = syncedStore({ todos: [] as Todo[] });
+const doc = getYjsDoc(globalStore);
+
 //new WebrtcProvider('id', getYjsValue(globalStore) as any); // sync via webrtc
 
-const solidPersistence = await SolidPersistence.create(
-  'todos1',
-  getYjsValue(globalStore) as any
-);
+const indexeddbPersistence = new IndexeddbPersistence(fileName, doc);
+
+indexeddbPersistence.on('synced', () => {
+  console.log('content from the database is loaded');
+});
+
+const solidPersistence = await SolidPersistence.create(fileName, doc);
 
 export const solid = () => {
   console.log('solid', solidPersistence);

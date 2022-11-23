@@ -1,6 +1,6 @@
 import { Observable } from 'lib0/observable';
 import * as Y from 'yjs';
-import { fromBase64, fromUint8Array, toUint8Array } from 'js-base64';
+import { fromUint8Array, toUint8Array } from 'js-base64';
 
 import {
   handleIncomingRedirect,
@@ -24,7 +24,6 @@ import {
   Url,
 } from '@inrupt/solid-client';
 import { RDF, SCHEMA_INRUPT, AS } from '@inrupt/vocab-common-rdf';
-import { Todo } from './store';
 
 const POD_URL = 'https://truthless.inrupt.net';
 
