@@ -1,7 +1,12 @@
 import { getYjsValue, syncedStore, getYjsDoc } from '@syncedstore/core';
 import { WebrtcProvider } from 'y-webrtc';
 import { IndexeddbPersistence } from 'y-indexeddb';
-import { SolidPersistence, login as solidLogin } from './solid';
+import {
+  SolidPersistence,
+  login as solidLogin,
+  accessControl,
+  setAccess,
+} from './solid';
 
 export type Todo = {
   title: string;
@@ -39,4 +44,9 @@ export const sessionInfo = () => {
 export const datasetInfo = () => {
   console.log('Dataset info: ', solidPersistence.dataset);
   console.log('Doc info: ', solidPersistence.doc.toJSON());
+};
+
+export const access = async () => {
+  await setAccess();
+  accessControl();
 };

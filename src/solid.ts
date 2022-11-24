@@ -22,6 +22,18 @@ import {
   saveSolidDatasetAt,
   getSolidDataset,
   Url,
+  universalAccess,
+  getSolidDatasetWithAcl,
+  getAgentAccessAll,
+  hasResourceAcl,
+  hasFallbackAcl,
+  hasAccessibleAcl,
+  createAcl,
+  createAclFromFallbackAcl,
+  getResourceAcl,
+  setAgentResourceAccess,
+  saveAclFor,
+  Access,
 } from '@inrupt/solid-client';
 import { RDF, SCHEMA_INRUPT, AS } from '@inrupt/vocab-common-rdf';
 
@@ -46,13 +58,19 @@ export const login = async (
   return session;
 };
 
-const loadDataset = async (datasetUrl: string | Url) => {
+const loadDataset = async (datasetUrl: string | Url, withAcl = false) => {
   let dataset;
   try {
-    dataset = await getSolidDataset(
-      datasetUrl,
-      { fetch: fetch } // fetch function from authenticated session
-    );
+    if (withAcl) {
+      dataset = await getSolidDatasetWithAcl(datasetUrl, {
+        fetch: fetch,
+      });
+    } else {
+      dataset = await getSolidDataset(
+        datasetUrl,
+        { fetch: fetch } // fetch function from authenticated session
+      );
+    }
   } catch (error) {
     console.log('Error loading dataset: ', error);
   }
@@ -104,6 +122,70 @@ const getYDocValue = (thing: any, name: string) => {
   const value = getStringNoLocale(thing, SCHEMA_INRUPT.value);
 
   return value ? toUint8Array(value) : null;
+};
+
+const logAccessInfo = (agent: any, agentAccess: any, resource: any) => {
+  console.log(`For resource::: ${resource}`);
+  if (agentAccess === null) {
+    console.log(`Could not load ${agent}'s access details.`);
+  } else {
+    console.log(`${agent}'s Access:: ${JSON.stringify(agentAccess)}`);
+  }
+};
+
+export const accessControl = async (datasetUrl = `${POD_URL}/yjs/docs`) => {
+  let datasetWithAcl: any = await loadDataset(datasetUrl, true);
+  let accessByAgent: any = getAgentAccessAll(datasetWithAcl);
+
+  for (const [agent, agentAccess] of Object.entries(accessByAgent)) {
+    logAccessInfo(agent, agentAccess, datasetUrl);
+  }
+};
+
+export const setAccess = async (
+  datasetUrl = `${POD_URL}/yjs/docs`,
+  agent = 'https://imp.inrupt.net/profile/card#me',
+  access: Access = {
+    read: true,
+    append: true,
+    write: true,
+    control: true,
+  }
+) => {
+  let datasetWithAcl: any = await loadDataset(datasetUrl, true);
+
+  // Obtain the SolidDataset's own ACL, if available,
+  // or initialise a new one, if possible:
+  let resourceAcl;
+  if (!hasResourceAcl(datasetWithAcl)) {
+    if (!hasAccessibleAcl(datasetWithAcl)) {
+      throw new Error(
+        'The current user does not have permission to change access rights to this Resource.'
+      );
+    }
+    if (!hasFallbackAcl(datasetWithAcl)) {
+      throw new Error(
+        'The current user does not have permission to see who currently has access to this Resource.'
+      );
+      // Alternatively, initialise a new empty ACL as follows,
+      // but be aware that if you do not give someone Control access,
+      // **nobody will ever be able to change Access permissions in the future**:
+      // resourceAcl = createAcl(datasetWithAcl);
+    }
+    resourceAcl = createAclFromFallbackAcl(datasetWithAcl);
+    console.log('WARNING - Created new empty ACL from fallback ACL');
+  } else {
+    resourceAcl = getResourceAcl(datasetWithAcl);
+  }
+
+  // Give someone Control access to the given Resource:
+  const updatedAcl = setAgentResourceAccess(resourceAcl, agent, access);
+
+  // Now save the ACL:
+  await saveAclFor(datasetWithAcl, updatedAcl, { fetch: fetch });
+
+  console.log('Access set', updatedAcl);
+  //logAccessInfo(agent, newAccess, datasetUrl);
 };
 
 export class SolidPersistence extends Observable<string> {
