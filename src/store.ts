@@ -4,8 +4,10 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import {
   SolidPersistence,
   login as solidLogin,
-  accessControl,
-  setAccess,
+  getAccessInfoWAC,
+  setAccessWAC,
+  getPublicAccessInfo,
+  getAgentAccessInfo,
 } from './solid';
 
 export type Todo = {
@@ -47,6 +49,8 @@ export const datasetInfo = () => {
 };
 
 export const access = async () => {
-  await setAccess();
-  accessControl();
+  getPublicAccessInfo();
+  getAgentAccessInfo();
+  //await setAccessWAC();
+  //accessControl();
 };

@@ -34,6 +34,7 @@ import {
   setAgentResourceAccess,
   saveAclFor,
   Access,
+  AgentAccess,
 } from '@inrupt/solid-client';
 import { RDF, SCHEMA_INRUPT, AS } from '@inrupt/vocab-common-rdf';
 
@@ -124,6 +125,19 @@ const getYDocValue = (thing: any, name: string) => {
   return value ? toUint8Array(value) : null;
 };
 
+const logAccessInfoAll = (agentAccess: AgentAccess | null, dataset: any) => {
+  let resource = dataset.internal_resourceInfo.sourceIri;
+  console.log(`For resource::: ${resource}`);
+
+  if (agentAccess) {
+    for (const [agent, access] of Object.entries(agentAccess)) {
+      console.log(`${agent}'s Access:: ${JSON.stringify(access)}`);
+    }
+  } else {
+    console.log('No access info found');
+  }
+};
+
 const logAccessInfo = (agent: any, agentAccess: any, resource: any) => {
   console.log(`For resource::: ${resource}`);
   if (agentAccess === null) {
@@ -133,16 +147,52 @@ const logAccessInfo = (agent: any, agentAccess: any, resource: any) => {
   }
 };
 
-export const accessControl = async (datasetUrl = `${POD_URL}/yjs/docs`) => {
-  let datasetWithAcl: any = await loadDataset(datasetUrl, true);
-  let accessByAgent: any = getAgentAccessAll(datasetWithAcl);
+export const getAccessInfoWAC = async (
+  datasetWithAcl: any
+): Promise<AgentAccess | null> => {
+  let accessByAgent = getAgentAccessAll(datasetWithAcl);
 
-  for (const [agent, agentAccess] of Object.entries(accessByAgent)) {
-    logAccessInfo(agent, agentAccess, datasetUrl);
-  }
+  logAccessInfoAll(accessByAgent, datasetWithAcl);
+
+  return accessByAgent;
 };
 
-export const setAccess = async (
+export const getPublicAccessInfo = async (
+  datasetUrl = `${POD_URL}/yjs/docs`
+) => {
+  universalAccess
+    .getPublicAccess(
+      datasetUrl, // Resource
+      { fetch: fetch } // fetch function from authenticated session
+    )
+    .then((returnedAccess) => {
+      if (returnedAccess === null) {
+        console.log('Could not load access details for this Resource.');
+      } else {
+        console.log(
+          'Returned Public Access:: ',
+          JSON.stringify(returnedAccess)
+        );
+      }
+    });
+};
+
+export const getAgentAccessInfo = async (
+  datasetUrl = `${POD_URL}/yjs/docs`,
+  webid = 'https://imp.inrupt.net/profile/card#me'
+) => {
+  universalAccess
+    .getAgentAccess(
+      datasetUrl, // resource
+      webid, // agent
+      { fetch: fetch } // fetch function from authenticated session
+    )
+    .then((agentAccess) => {
+      logAccessInfo(webid, agentAccess, datasetUrl);
+    });
+};
+
+export const setAccessWAC = async (
   datasetUrl = `${POD_URL}/yjs/docs`,
   agent = 'https://imp.inrupt.net/profile/card#me',
   access: Access = {
@@ -154,8 +204,7 @@ export const setAccess = async (
 ) => {
   let datasetWithAcl: any = await loadDataset(datasetUrl, true);
 
-  // Obtain the SolidDataset's own ACL, if available,
-  // or initialise a new one, if possible:
+  // Obtain the SolidDataset's own ACL, if available, or initialise a new one, if possible:
   let resourceAcl;
   if (!hasResourceAcl(datasetWithAcl)) {
     if (!hasAccessibleAcl(datasetWithAcl)) {
@@ -167,25 +216,35 @@ export const setAccess = async (
       throw new Error(
         'The current user does not have permission to see who currently has access to this Resource.'
       );
-      // Alternatively, initialise a new empty ACL as follows,
-      // but be aware that if you do not give someone Control access,
-      // **nobody will ever be able to change Access permissions in the future**:
-      // resourceAcl = createAcl(datasetWithAcl);
     }
     resourceAcl = createAclFromFallbackAcl(datasetWithAcl);
-    console.log('WARNING - Created new empty ACL from fallback ACL');
+    console.log('INFO - Created new ACL from fallback ACL');
   } else {
     resourceAcl = getResourceAcl(datasetWithAcl);
   }
 
-  // Give someone Control access to the given Resource:
-  const updatedAcl = setAgentResourceAccess(resourceAcl, agent, access);
+  const updatedAcl: any = setAgentResourceAccess(resourceAcl, agent, access);
 
-  // Now save the ACL:
   await saveAclFor(datasetWithAcl, updatedAcl, { fetch: fetch });
 
-  console.log('Access set', updatedAcl);
-  //logAccessInfo(agent, newAccess, datasetUrl);
+  console.log('Updated ACL', updatedAcl);
+};
+
+const hasCreatorAccessToDatasetWAC = (
+  datasetWithAcl: any,
+  webId: string | undefined
+) => {
+  let accessByAgent = getAgentAccessAll(datasetWithAcl);
+
+  if (accessByAgent && webId) {
+    for (const [agent, access] of Object.entries(accessByAgent)) {
+      if (agent === webId && access.control) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 };
 
 export class SolidPersistence extends Observable<string> {
@@ -196,6 +255,7 @@ export class SolidPersistence extends Observable<string> {
   public dataset: any;
   public thing: any;
   public datasetUrl: string;
+  public hasCreatorAccess: boolean;
 
   private isUpdating: boolean;
   private hasFurtherUpdates: boolean;
@@ -206,7 +266,8 @@ export class SolidPersistence extends Observable<string> {
     session: Session,
     dataset: any,
     datasetUrl: string,
-    thing: any
+    thing: any,
+    hasCreatorAccess: boolean
   ) {
     super();
 
@@ -219,6 +280,7 @@ export class SolidPersistence extends Observable<string> {
 
     this.session = session;
     this.loggedIn = this.session.info.isLoggedIn;
+    this.hasCreatorAccess = hasCreatorAccess;
 
     this.isUpdating = false;
     this.hasFurtherUpdates = false;
@@ -255,11 +317,11 @@ export class SolidPersistence extends Observable<string> {
 
   public static async create(
     name: string,
-    doc: any,
+    doc: Y.Doc,
     autoLogin = true,
     datasetUrl = `${POD_URL}/yjs/docs`
   ): Promise<SolidPersistence> {
-    let session: Session, dataset: any, thing: any;
+    let session: Session, datasetWithAcl: any, thing: any, hasCreatorAccess;
 
     // LOGIN
     if (autoLogin) {
@@ -270,33 +332,58 @@ export class SolidPersistence extends Observable<string> {
     }
 
     // SYNC DOC
-    dataset = await loadDataset(datasetUrl);
+    console.log('Syncing doc');
+    datasetWithAcl = await loadDataset(datasetUrl, false);
+    console.log('Dataset loaded without acl', datasetWithAcl);
     let value;
-    if (dataset) {
-      thing = getYDocThing(dataset, datasetUrl, name);
+    if (datasetWithAcl) {
+      thing = getYDocThing(datasetWithAcl, datasetUrl, name);
       value = getYDocValue(thing, name);
+
+      console.log('Thing', thing);
+      console.log('Value', value);
+
+      // SET ACCESS INFO
+      /*hasCreatorAccess = hasCreatorAccessToDatasetWAC(
+        datasetWithAcl,
+        session.info.webId
+      );*/
+      hasCreatorAccess = false;
     } else {
-      dataset = createSolidDataset();
+      datasetWithAcl = createSolidDataset();
+      hasCreatorAccess = true;
     }
 
     if (value) {
+      console.log('efore update', doc.toJSON());
       Y.applyUpdate(doc, value);
+      console.log('Applied update', doc.toJSON());
     } else {
       thing = createYDocThing(name, doc);
-      dataset = setThing(dataset, thing);
-      await saveDataset(dataset, datasetUrl);
+      datasetWithAcl = setThing(datasetWithAcl, thing);
+      await saveDataset(datasetWithAcl, datasetUrl);
     }
 
-    return new SolidPersistence(name, doc, session, dataset, datasetUrl, thing);
+    return new SolidPersistence(
+      name,
+      doc,
+      session,
+      datasetWithAcl,
+      datasetUrl,
+      thing,
+      hasCreatorAccess
+    );
   }
 
   public async update(update: Uint8Array) {
-    Y.applyUpdate(this.doc, update, this);
     if (this.loggedIn) {
+      await this.fetchPod(); // dataset and thing need to be fetched before an update (avoid 409)
+
+      Y.applyUpdate(this.doc, update, this);
+
       this.thing = updateYDocThing(this.thing, this.doc);
       this.dataset = setThing(this.dataset, this.thing);
       await saveDataset(this.dataset, this.datasetUrl);
-      await this.fetchPod(); // dataset and thing need to be fetched again after update (avoid 409)
     } else {
       console.log('Cannot sync update - not logged in');
     }
@@ -306,8 +393,26 @@ export class SolidPersistence extends Observable<string> {
     if (this.loggedIn) {
       this.dataset = await loadDataset(this.datasetUrl);
       this.thing = getYDocThing(this.dataset, this.datasetUrl, this.name);
+      let value = getYDocValue(this.thing, this.name);
+      if (value) Y.applyUpdate(this.doc, value);
     } else {
       console.log('Cannot fetch - not logged in');
+    }
+  }
+
+  public async setAgentAccess(
+    webId: string,
+    access: Access = {
+      read: true,
+      append: true,
+      write: true,
+      control: false,
+    }
+  ) {
+    if (this.loggedIn) {
+      await setAccessWAC(this.datasetUrl, this.session.info.webId, access);
+    } else {
+      console.log('Cannot set access - not logged in');
     }
   }
 
