@@ -1,6 +1,10 @@
-# React Todo MVC example
+# IMP: Local-First Applications
+
+## ToDo MVC React App with SyncedStore and a custom SOLID Provider
 
 This example demonstrates how you can use SyncedStore to build a collaborative version of the [Todo MVC](http://todomvc.com) app.
+
+It consists of a custom SOLID provider that can be used in addition to the other SyncedProviders to enable storage in decentralized data pods and fine grained access control to Yjs documents.
 
 The code that sets up our store is defined in [src/store.ts](src/store.ts). By using the `useSyncedStore` hook, our React components (starting at [src/App.tsx](src/App.tsx)) are easy to read and update automatically.
 
