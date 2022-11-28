@@ -341,13 +341,11 @@ export class SolidPersistence extends Observable<string> {
 
     this.websocket = websocket;
 
-    this.websocket.onmessage = function (msg: any) {
+    this.websocket.onmessage = async (msg: any) => {
       if (msg.data && msg.data.slice(0, 3) === 'pub') {
         // resource updated, refetch resource
         console.log('Resource updated', msg.data);
-        if (this.isUpdating) {
-          this.hasFurtherUpdates = true;
-        }
+        await this.fetchPod();
       }
     };
 
@@ -493,7 +491,7 @@ export class SolidPersistence extends Observable<string> {
       this.dataset = await loadDataset(this.datasetUrl);
       this.thing = getYDocThing(this.dataset, this.datasetUrl, this.name);
       let value = getYDocValue(this.thing, this.name);
-      if (value) Y.applyUpdate(this.doc, value);
+      if (value) Y.applyUpdate(this.doc, value, this);
     } else {
       console.log('Cannot fetch - not logged in');
     }
