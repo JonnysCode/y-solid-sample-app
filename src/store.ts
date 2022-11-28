@@ -8,6 +8,7 @@ import {
   setAccessWAC,
   getPublicAccessInfo,
   getAgentAccessInfo,
+  setAgentAccess,
 } from './solid';
 
 export type Todo = {
@@ -49,6 +50,7 @@ export const datasetInfo = () => {
 };
 
 export const access = async () => {
+  //await setAgentAccess();
   getPublicAccessInfo();
   getAgentAccessInfo();
   //await setAccessWAC();

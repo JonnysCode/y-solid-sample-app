@@ -5,6 +5,7 @@
   "dependencies": {
     "@inrupt/lit-generated-vocab-common": "^0.3.11",
     "@inrupt/solid-client-authn-node": "^1.12.2",
+    "@inrupt/solid-client-notifications": "^1.1.1",
     "@inrupt/solid-ui-react": "^2.8.2",
     "@inrupt/vocab-common-rdf": "^1.0.5",
     "@syncedstore/core": "^0.4.2",

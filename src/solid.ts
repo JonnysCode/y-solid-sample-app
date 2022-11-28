@@ -37,11 +37,17 @@ import {
   AgentAccess,
 } from '@inrupt/solid-client';
 import { RDF, SCHEMA_INRUPT, AS } from '@inrupt/vocab-common-rdf';
+import { WebsocketNotification } from '@inrupt/solid-client-notifications';
+import { updateSourceFile } from 'typescript';
 
 const POD_URL = 'https://truthless.inrupt.net';
 
+const ESS_LOGIN = 'https://login.inrupt.com';
+const STORAGE_URL =
+  'https://storage.inrupt.com/e1ea7746-4998-4493-a241-45860d9427bb/';
+
 export const login = async (
-  oidcIssuer = 'https://inrupt.net/',
+  oidcIssuer = 'https://inrupt.net',
   clientName = 'SyncedStore'
 ): Promise<Session> => {
   await handleIncomingRedirect({ restorePreviousSession: true });
@@ -179,7 +185,7 @@ export const getPublicAccessInfo = async (
 
 export const getAgentAccessInfo = async (
   datasetUrl = `${POD_URL}/yjs/docs`,
-  webid = 'https://imp.inrupt.net/profile/card#me'
+  webid = 'https://imp.solidcommunity.net/profile/card#me'
 ) => {
   universalAccess
     .getAgentAccess(
@@ -189,6 +195,52 @@ export const getAgentAccessInfo = async (
     )
     .then((agentAccess) => {
       logAccessInfo(webid, agentAccess, datasetUrl);
+    });
+};
+
+export const setPublicAccess = async (datasetUri: string, access: Access) => {
+  universalAccess
+    .setPublicAccess(
+      datasetUri, // Resource
+      access, // Access
+      { fetch: fetch } // fetch function from authenticated session
+    )
+    .then((returnedAccess) => {
+      if (returnedAccess === null) {
+        console.log('Could not load access details for this Resource.');
+      } else {
+        console.log(
+          'Returned Public Access:: ',
+          JSON.stringify(returnedAccess)
+        );
+      }
+    });
+};
+
+export const setAgentAccess = async (
+  datasetUrl = `${POD_URL}/yjs/docs`,
+  webId = 'https://imp.solidcommunity.net/profile/card#me',
+  access = {
+    read: true,
+    append: true,
+    write: true,
+    controlRead: true,
+    controlWrite: true,
+  }
+) => {
+  universalAccess
+    .setAgentAccess(
+      datasetUrl, // Resource
+      webId, // Agent
+      access, // Access
+      { fetch: fetch } // fetch function from authenticated session
+    )
+    .then((returnedAccess) => {
+      if (returnedAccess === null) {
+        console.log('Could not load access details for this Resource.');
+      } else {
+        console.log('Returned Agent Access:: ', JSON.stringify(returnedAccess));
+      }
     });
 };
 
@@ -256,9 +308,10 @@ export class SolidPersistence extends Observable<string> {
   public thing: any;
   public datasetUrl: string;
   public hasCreatorAccess: boolean;
+  public websocket: any;
 
   private isUpdating: boolean;
-  private hasFurtherUpdates: boolean;
+  private furtherUpdates: any[];
 
   private constructor(
     name: string,
@@ -267,7 +320,8 @@ export class SolidPersistence extends Observable<string> {
     dataset: any,
     datasetUrl: string,
     thing: any,
-    hasCreatorAccess: boolean
+    hasCreatorAccess: boolean,
+    websocket: any
   ) {
     super();
 
@@ -283,7 +337,19 @@ export class SolidPersistence extends Observable<string> {
     this.hasCreatorAccess = hasCreatorAccess;
 
     this.isUpdating = false;
-    this.hasFurtherUpdates = false;
+    this.furtherUpdates = [];
+
+    this.websocket = websocket;
+
+    this.websocket.onmessage = function (msg: any) {
+      if (msg.data && msg.data.slice(0, 3) === 'pub') {
+        // resource updated, refetch resource
+        console.log('Resource updated', msg.data);
+        if (this.isUpdating) {
+          this.hasFurtherUpdates = true;
+        }
+      }
+    };
 
     this.doc.on('update', (update, origin) => {
       // ignore updates applied by this provider
@@ -291,7 +357,8 @@ export class SolidPersistence extends Observable<string> {
         // this update was produced either locally or by another provider.
         if (this.isUpdating) {
           // this provider is currently applying updates from the store.
-          this.hasFurtherUpdates = true;
+          console.log('has further updates');
+          this.furtherUpdates.push(update);
         } else {
           this.emit('update', [update]);
         }
@@ -303,12 +370,11 @@ export class SolidPersistence extends Observable<string> {
     // listen to an event that fires when a remote update is received
     this.on('update', async (update: Uint8Array) => {
       this.isUpdating = true;
-      await this.update(update);
+      await this.update([update]);
 
       // if there are more updates in the meantime, update to the latest state
-      while (this.hasFurtherUpdates) {
-        this.hasFurtherUpdates = false;
-        await this.update(update);
+      while (this.furtherUpdates.length > 0) {
+        await this.update(this.furtherUpdates.splice(0));
       }
 
       this.isUpdating = false;
@@ -329,6 +395,21 @@ export class SolidPersistence extends Observable<string> {
     } else {
       await handleIncomingRedirect();
       session = getDefaultSession();
+    }
+
+    // NOT LOGGED IN
+    if (!session.info.isLoggedIn) {
+      console.log('Not logged in');
+      return new SolidPersistence(
+        name,
+        doc,
+        session,
+        null,
+        datasetUrl,
+        null,
+        false,
+        null
+      );
     }
 
     // SYNC DOC
@@ -355,13 +436,22 @@ export class SolidPersistence extends Observable<string> {
     }
 
     if (value) {
-      console.log('efore update', doc.toJSON());
       Y.applyUpdate(doc, value);
-      console.log('Applied update', doc.toJSON());
     } else {
       thing = createYDocThing(name, doc);
       datasetWithAcl = setThing(datasetWithAcl, thing);
       await saveDataset(datasetWithAcl, datasetUrl);
+    }
+
+    // CONNECT TO NOTIFICATIONS
+    let websocket: WebSocket | null = null;
+    try {
+      websocket = new WebSocket('wss://inrupt.net/', ['solid-0.1']);
+      websocket.onopen = function () {
+        this.send('sub ' + datasetUrl);
+      };
+    } catch (e) {
+      console.log('Could not connect to websocket', e);
     }
 
     return new SolidPersistence(
@@ -371,15 +461,24 @@ export class SolidPersistence extends Observable<string> {
       datasetWithAcl,
       datasetUrl,
       thing,
-      hasCreatorAccess
+      hasCreatorAccess,
+      websocket
     );
   }
 
-  public async update(update: Uint8Array) {
+  public async update(updates: Uint8Array[]) {
     if (this.loggedIn) {
       await this.fetchPod(); // dataset and thing need to be fetched before an update (avoid 409)
 
-      Y.applyUpdate(this.doc, update, this);
+      Y.transact(
+        this.doc,
+        () => {
+          for (const update of updates) {
+            Y.applyUpdate(this.doc, update, this);
+          }
+        },
+        this
+      );
 
       this.thing = updateYDocThing(this.thing, this.doc);
       this.dataset = setThing(this.dataset, this.thing);
@@ -402,15 +501,16 @@ export class SolidPersistence extends Observable<string> {
 
   public async setAgentAccess(
     webId: string,
-    access: Access = {
+    access = {
       read: true,
       append: true,
       write: true,
-      control: false,
+      controlRead: false,
+      controlWrite: false,
     }
   ) {
     if (this.loggedIn) {
-      await setAccessWAC(this.datasetUrl, this.session.info.webId, access);
+      await setAgentAccess(this.datasetUrl, webId, access);
     } else {
       console.log('Cannot set access - not logged in');
     }
@@ -420,5 +520,19 @@ export class SolidPersistence extends Observable<string> {
     this.dataset = await saveDataset(this.dataset, this.datasetUrl);
     console.log('dataset saved', this.dataset);
     this.emit('saved', [this]);
+  }
+}
+
+class SolidNotification {
+  public websocket: WebsocketNotification;
+
+  constructor(datasetUrl: string, session: Session) {
+    this.websocket = new WebsocketNotification(datasetUrl, { fetch: fetch });
+
+    this.websocket.on('message', console.log);
+
+    this.websocket.connect();
+
+    console.log('Websocket created', this.websocket);
   }
 }
