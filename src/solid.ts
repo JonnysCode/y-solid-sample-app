@@ -23,7 +23,9 @@ import {
   getSolidDatasetWithAcl,
   getAgentAccessAll,
   AgentAccess,
-  ThingPersisted,
+  getUrlAll,
+  getUrl,
+  Thing,
 } from '@inrupt/solid-client';
 import { RDF, SCHEMA_INRUPT, DCTERMS } from '@inrupt/vocab-common-rdf';
 
@@ -100,17 +102,31 @@ const newYDocThing = (name: string, value: Uint8Array, webId: string) => {
   return thing;
 };
 
-const updateYDocThing = (thing: any, value: Uint8Array) => {
-  thing = setStringNoLocale(thing, SCHEMA_INRUPT.value, fromUint8Array(value));
+const updateYDocThing = (thing: Thing, value: Uint8Array) => {
+  return setStringNoLocale(thing, SCHEMA_INRUPT.value, fromUint8Array(value));
+};
 
-  return thing;
+const isContributor = (thing: Thing, webId: string) => {
+  const contributors = getUrlAll(thing, DCTERMS.contributor);
+  console.log('contributors', contributors);
+  return contributors.includes(webId);
+};
+
+const isCreator = (thing: Thing, webId: string) => {
+  const creator = getUrl(thing, DCTERMS.creator);
+  console.log('creator', creator);
+  return creator === webId;
+};
+
+const addContributorToThing = (thing: Thing, webId: string) => {
+  return setStringNoLocale(thing, DCTERMS.contributor, webId);
 };
 
 const getYDocThing = (dataset: any, datasetUrl: string, name: string) => {
   return getThing(dataset, datasetUrl + '#' + name);
 };
 
-const getYDocValue = (thing: ThingPersisted, name: string) => {
+const getYDocValue = (thing: Thing) => {
   const value = getStringNoLocale(thing, SCHEMA_INRUPT.value);
 
   return value ? toUint8Array(value) : null;
@@ -291,7 +307,7 @@ class SolidDataset {
     if (dataset) {
       thing = getYDocThing(dataset, url, name);
       if (thing) {
-        value = getYDocValue(thing, name);
+        value = getYDocValue(thing);
       }
     } else {
       dataset = createSolidDataset();
@@ -302,8 +318,12 @@ class SolidDataset {
       thing = newYDocThing(name, value, webId);
       dataset = setThing(dataset, thing);
       await saveDataset(dataset, url);
-    } else {
-      // add collaborator if not yet registered
+    }
+
+    if (thing && !isContributor(thing, webId) && !isCreator(thing, webId)) {
+      thing = addContributorToThing(thing, webId);
+      dataset = setThing(dataset, thing);
+      await saveDataset(dataset, url);
     }
 
     return new SolidDataset(name, url, dataset, thing, value);
@@ -313,7 +333,7 @@ class SolidDataset {
     this.resource = await loadDataset(this.url, false);
     this.thing = getYDocThing(this.resource, this.url, this.name);
 
-    let value = getYDocValue(this.thing, this.name);
+    let value = getYDocValue(this.thing);
     if (value) {
       this.value = value;
     }
