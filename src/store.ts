@@ -14,7 +14,7 @@ export type Todo = {
   completed: boolean;
 };
 
-const fileName = 'todos2';
+const fileName = 'todos3';
 
 export const globalStore = syncedStore({ todos: [] as Todo[] });
 const doc = getYjsDoc(globalStore);

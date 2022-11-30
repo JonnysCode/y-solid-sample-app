@@ -25,7 +25,7 @@ import {
   AgentAccess,
   ThingPersisted,
 } from '@inrupt/solid-client';
-import { RDF, SCHEMA_INRUPT } from '@inrupt/vocab-common-rdf';
+import { RDF, SCHEMA_INRUPT, DCTERMS } from '@inrupt/vocab-common-rdf';
 
 const POD_URL = 'https://truthless.inrupt.net';
 
@@ -88,35 +88,12 @@ const saveDataset = async (dataset: any, datasetUrl: string | Url) => {
   }
 };
 
-const createYDocThing2 = (name: string, doc: Y.Doc) => {
+const newYDocThing = (name: string, value: Uint8Array, webId: string) => {
   const thing = buildThing(createThing({ name: name }))
     .addStringNoLocale(SCHEMA_INRUPT.name, 'SyncedStore Y.Doc')
     .addUrl(RDF.type, 'https://schema.org/DigitalDocument')
     .addUrl(RDF.type, 'https://docs.yjs.dev/api/y.doc')
-    .addStringNoLocale(
-      SCHEMA_INRUPT.value,
-      fromUint8Array(Y.encodeStateAsUpdate(doc))
-    )
-    .build();
-
-  return thing;
-};
-
-const updateYDocThing2 = (thing: ThingPersisted, doc: Y.Doc) => {
-  thing = setStringNoLocale(
-    thing,
-    SCHEMA_INRUPT.value,
-    fromUint8Array(Y.encodeStateAsUpdate(doc))
-  );
-
-  return thing;
-};
-
-const createYDocThing = (name: string, value: Uint8Array) => {
-  const thing = buildThing(createThing({ name: name }))
-    .addStringNoLocale(SCHEMA_INRUPT.name, 'SyncedStore Y.Doc')
-    .addUrl(RDF.type, 'https://schema.org/DigitalDocument')
-    .addUrl(RDF.type, 'https://docs.yjs.dev/api/y.doc')
+    .addUrl(DCTERMS.creator, webId)
     .addStringNoLocale(SCHEMA_INRUPT.value, fromUint8Array(value))
     .build();
 
@@ -306,7 +283,7 @@ class SolidDataset {
     this.value = value;
   }
 
-  public static async create(name: string, url: string) {
+  public static async create(name: string, url: string, webId: string) {
     let dataset, value, thing;
 
     dataset = await loadDataset(url, false);
@@ -322,9 +299,11 @@ class SolidDataset {
 
     if (!value) {
       value = new Uint8Array();
-      thing = createYDocThing(name, value);
+      thing = newYDocThing(name, value, webId);
       dataset = setThing(dataset, thing);
       await saveDataset(dataset, url);
+    } else {
+      // add collaborator if not yet registered
     }
 
     return new SolidDataset(name, url, dataset, thing, value);
@@ -471,13 +450,17 @@ export class SolidPersistence extends Observable<string> {
     }
 
     // NOT LOGGED IN
-    if (!session.info.isLoggedIn) {
+    if (!session.info.isLoggedIn || !session.info.webId) {
       console.log('Not logged in');
       return new SolidPersistence(name, doc, session, null, false, null);
     }
 
     // LOAD DATASET
-    let dataset = await SolidDataset.create(name, resourceUrl);
+    let dataset = await SolidDataset.create(
+      name,
+      resourceUrl,
+      session.info.webId
+    );
     if (dataset.value.length > 0) Y.applyUpdate(doc, dataset.value, this);
     await dataset.update(Y.encodeStateAsUpdate(doc));
 
