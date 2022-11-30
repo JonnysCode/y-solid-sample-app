@@ -9,13 +9,10 @@ import {
   Session,
 } from '@inrupt/solid-client-authn-browser';
 import {
-  addUrl,
-  addStringNoLocale,
   buildThing,
   createSolidDataset,
   createThing,
   setThing,
-  getThingAll,
   getStringNoLocale,
   setStringNoLocale,
   getThing,
@@ -25,26 +22,20 @@ import {
   universalAccess,
   getSolidDatasetWithAcl,
   getAgentAccessAll,
-  hasResourceAcl,
-  hasFallbackAcl,
-  hasAccessibleAcl,
-  createAcl,
-  createAclFromFallbackAcl,
-  getResourceAcl,
-  setAgentResourceAccess,
-  saveAclFor,
-  Access,
   AgentAccess,
+  ThingPersisted,
 } from '@inrupt/solid-client';
-import { RDF, SCHEMA_INRUPT, AS } from '@inrupt/vocab-common-rdf';
-import { WebsocketNotification } from '@inrupt/solid-client-notifications';
-import { updateSourceFile } from 'typescript';
+import { RDF, SCHEMA_INRUPT } from '@inrupt/vocab-common-rdf';
 
 const POD_URL = 'https://truthless.inrupt.net';
 
-const ESS_LOGIN = 'https://login.inrupt.com';
-const STORAGE_URL =
-  'https://storage.inrupt.com/e1ea7746-4998-4493-a241-45860d9427bb/';
+export interface AccessModes {
+  read: boolean;
+  append: boolean;
+  write: boolean;
+  controlRead: boolean;
+  controlWrite: boolean;
+}
 
 export const login = async (
   oidcIssuer = 'https://inrupt.net',
@@ -97,7 +88,7 @@ const saveDataset = async (dataset: any, datasetUrl: string | Url) => {
   }
 };
 
-const createYDocThing = (name: string, doc: Y.Doc) => {
+const createYDocThing2 = (name: string, doc: Y.Doc) => {
   const thing = buildThing(createThing({ name: name }))
     .addStringNoLocale(SCHEMA_INRUPT.name, 'SyncedStore Y.Doc')
     .addUrl(RDF.type, 'https://schema.org/DigitalDocument')
@@ -111,7 +102,7 @@ const createYDocThing = (name: string, doc: Y.Doc) => {
   return thing;
 };
 
-const updateYDocThing = (thing: any, doc: Y.Doc) => {
+const updateYDocThing2 = (thing: ThingPersisted, doc: Y.Doc) => {
   thing = setStringNoLocale(
     thing,
     SCHEMA_INRUPT.value,
@@ -121,11 +112,28 @@ const updateYDocThing = (thing: any, doc: Y.Doc) => {
   return thing;
 };
 
+const createYDocThing = (name: string, value: Uint8Array) => {
+  const thing = buildThing(createThing({ name: name }))
+    .addStringNoLocale(SCHEMA_INRUPT.name, 'SyncedStore Y.Doc')
+    .addUrl(RDF.type, 'https://schema.org/DigitalDocument')
+    .addUrl(RDF.type, 'https://docs.yjs.dev/api/y.doc')
+    .addStringNoLocale(SCHEMA_INRUPT.value, fromUint8Array(value))
+    .build();
+
+  return thing;
+};
+
+const updateYDocThing = (thing: any, value: Uint8Array) => {
+  thing = setStringNoLocale(thing, SCHEMA_INRUPT.value, fromUint8Array(value));
+
+  return thing;
+};
+
 const getYDocThing = (dataset: any, datasetUrl: string, name: string) => {
   return getThing(dataset, datasetUrl + '#' + name);
 };
 
-const getYDocValue = (thing: any, name: string) => {
+const getYDocValue = (thing: ThingPersisted, name: string) => {
   const value = getStringNoLocale(thing, SCHEMA_INRUPT.value);
 
   return value ? toUint8Array(value) : null;
@@ -184,48 +192,54 @@ export const getPublicAccessInfo = async (
 };
 
 export const getAgentAccessInfo = async (
-  datasetUrl = `${POD_URL}/yjs/docs`,
-  webid = 'https://imp.solidcommunity.net/profile/card#me'
-) => {
-  universalAccess
-    .getAgentAccess(
-      datasetUrl, // resource
-      webid, // agent
-      { fetch: fetch } // fetch function from authenticated session
-    )
-    .then((agentAccess) => {
-      logAccessInfo(webid, agentAccess, datasetUrl);
-    });
+  resourceUrl: string,
+  webid: string
+): Promise<AccessModes | null> => {
+  let agentAccess = universalAccess.getAgentAccess(
+    resourceUrl, // resource
+    webid, // agent
+    { fetch: fetch } // fetch function from authenticated session
+  );
+
+  logAccessInfo(webid, agentAccess, resourceUrl);
+
+  return agentAccess;
 };
 
-export const setPublicAccess = async (datasetUri: string, access: Access) => {
-  universalAccess
-    .setPublicAccess(
-      datasetUri, // Resource
-      access, // Access
-      { fetch: fetch } // fetch function from authenticated session
-    )
-    .then((returnedAccess) => {
-      if (returnedAccess === null) {
-        console.log('Could not load access details for this Resource.');
-      } else {
-        console.log(
-          'Returned Public Access:: ',
-          JSON.stringify(returnedAccess)
-        );
-      }
-    });
+export const setPublicAccess = async (
+  resourceUrl: string,
+  access: AccessModes = {
+    read: true,
+    append: false,
+    write: false,
+    controlRead: false,
+    controlWrite: false,
+  }
+): Promise<AccessModes | null> => {
+  let publicAccess = await universalAccess.setPublicAccess(
+    resourceUrl, // Resource
+    access, // Access
+    { fetch: fetch } // fetch function from authenticated session
+  );
+
+  if (publicAccess === null) {
+    console.log('Could not load access details for this Resource.');
+  } else {
+    console.log('Returned Public Access:: ', JSON.stringify(publicAccess));
+  }
+
+  return access;
 };
 
 export const setAgentAccess = async (
   datasetUrl = `${POD_URL}/yjs/docs`,
   webId = 'https://imp.solidcommunity.net/profile/card#me',
-  access = {
+  access: AccessModes = {
     read: true,
     append: true,
     write: true,
-    controlRead: true,
-    controlWrite: true,
+    controlRead: false,
+    controlWrite: false,
   }
 ) => {
   universalAccess
@@ -244,82 +258,127 @@ export const setAgentAccess = async (
     });
 };
 
-export const setAccessWAC = async (
-  datasetUrl = `${POD_URL}/yjs/docs`,
-  agent = 'https://imp.inrupt.net/profile/card#me',
-  access: Access = {
-    read: true,
-    append: true,
-    write: true,
-    control: true,
-  }
-) => {
-  let datasetWithAcl: any = await loadDataset(datasetUrl, true);
+/**
+ * Subscribe to a Solid resource via WebSocket.
+ * Currently only supports NSS implementations of pods.
+ *
+ * @param resourceUrl
+ * @param socketUrl
+ * @returns A websocket connection to the resource
+ */
+const openSolidWebSocket = (
+  resourceUrl: string,
+  socketUrl: string = 'wss://inrupt.net/'
+): WebSocket | null => {
+  try {
+    let websocket = new WebSocket(socketUrl, ['solid-0.1']);
 
-  // Obtain the SolidDataset's own ACL, if available, or initialise a new one, if possible:
-  let resourceAcl;
-  if (!hasResourceAcl(datasetWithAcl)) {
-    if (!hasAccessibleAcl(datasetWithAcl)) {
-      throw new Error(
-        'The current user does not have permission to change access rights to this Resource.'
-      );
-    }
-    if (!hasFallbackAcl(datasetWithAcl)) {
-      throw new Error(
-        'The current user does not have permission to see who currently has access to this Resource.'
-      );
-    }
-    resourceAcl = createAclFromFallbackAcl(datasetWithAcl);
-    console.log('INFO - Created new ACL from fallback ACL');
-  } else {
-    resourceAcl = getResourceAcl(datasetWithAcl);
+    websocket.onopen = function () {
+      this.send('sub ' + resourceUrl);
+    };
+
+    return websocket;
+  } catch (e) {
+    console.log('Could not connect to websocket', e);
   }
 
-  const updatedAcl: any = setAgentResourceAccess(resourceAcl, agent, access);
-
-  await saveAclFor(datasetWithAcl, updatedAcl, { fetch: fetch });
-
-  console.log('Updated ACL', updatedAcl);
+  return null;
 };
 
-const hasCreatorAccessToDatasetWAC = (
-  datasetWithAcl: any,
-  webId: string | undefined
-) => {
-  let accessByAgent = getAgentAccessAll(datasetWithAcl);
+class SolidDataset {
+  public name: string;
+  public url: string;
+  public resource: any;
+  public thing: any;
+  public value: Uint8Array;
 
-  if (accessByAgent && webId) {
-    for (const [agent, access] of Object.entries(accessByAgent)) {
-      if (agent === webId && access.control) {
-        return true;
+  private constructor(
+    name: string,
+    url: string,
+    resource: any,
+    thing: any,
+    value: Uint8Array
+  ) {
+    this.name = name;
+    this.url = url;
+    this.resource = resource;
+    this.thing = thing;
+    this.value = value;
+  }
+
+  public static async create(name: string, url: string) {
+    let dataset, value, thing;
+
+    dataset = await loadDataset(url, false);
+
+    if (dataset) {
+      thing = getYDocThing(dataset, url, name);
+      if (thing) {
+        value = getYDocValue(thing, name);
       }
+    } else {
+      dataset = createSolidDataset();
     }
+
+    if (!value) {
+      value = new Uint8Array();
+      thing = createYDocThing(name, value);
+      dataset = setThing(dataset, thing);
+      await saveDataset(dataset, url);
+    }
+
+    return new SolidDataset(name, url, dataset, thing, value);
   }
 
-  return false;
-};
+  public fetch = async (): Promise<Uint8Array | null> => {
+    this.resource = await loadDataset(this.url, false);
+    this.thing = getYDocThing(this.resource, this.url, this.name);
+
+    let value = getYDocValue(this.thing, this.name);
+    if (value) {
+      this.value = value;
+    }
+
+    return value;
+  };
+
+  public update = async (value: Uint8Array): Promise<void> => {
+    this.thing = updateYDocThing(this.thing, value);
+    this.resource = setThing(this.resource, this.thing);
+    await this.save();
+  };
+
+  public save = async (): Promise<void> => {
+    await saveDataset(this.resource, this.url);
+  };
+}
+
+enum UpdateType {
+  YDocUpdate,
+  YDocSync,
+  SolidNotification,
+}
 
 export class SolidPersistence extends Observable<string> {
   public name: string;
   public doc: Y.Doc;
   public loggedIn: boolean;
   public session: Session;
-  public dataset: any;
-  public thing: any;
-  public datasetUrl: string;
+  public dataset: SolidDataset | null;
   public hasCreatorAccess: boolean;
   public websocket: any;
 
   private isUpdating: boolean;
   private furtherUpdates: any[];
+  private lastFetched: Date | null;
+  private requiresFetch: boolean;
+  private isFetching: boolean;
 
   private constructor(
     name: string,
     doc: Y.Doc,
     session: Session,
-    dataset: any,
-    datasetUrl: string,
-    thing: any,
+    dataset: SolidDataset | null,
     hasCreatorAccess: boolean,
     websocket: any
   ) {
@@ -329,8 +388,6 @@ export class SolidPersistence extends Observable<string> {
     this.doc = doc;
 
     this.dataset = dataset;
-    this.datasetUrl = datasetUrl;
-    this.thing = thing;
 
     this.session = session;
     this.loggedIn = this.session.info.isLoggedIn;
@@ -338,41 +395,57 @@ export class SolidPersistence extends Observable<string> {
 
     this.isUpdating = false;
     this.furtherUpdates = [];
+    this.lastFetched = null;
+    this.isFetching = false;
+    this.requiresFetch = false;
 
     this.websocket = websocket;
 
+    // Currently also fetches when an update comes from this provider
     this.websocket.onmessage = async (msg: any) => {
       if (msg.data && msg.data.slice(0, 3) === 'pub') {
-        // resource updated, refetch resource
-        console.log('Resource updated', msg.data);
-        await this.fetchPod();
+        console.log('[Notification] Resource updated', msg.data);
+        if (this.isUpdating || this.isFetching) {
+          console.log('Update or fetch in progress, queueing fetch');
+          this.requiresFetch = true;
+        } else {
+          await this.fetchPod();
+        }
+
+        while (this.requiresFetch) {
+          this.requiresFetch = false;
+          await this.fetchPod();
+        }
       }
     };
 
     this.doc.on('update', (update, origin) => {
-      // ignore updates applied by this provider
       if (origin !== this) {
-        // this update was produced either locally or by another provider.
-        if (this.isUpdating) {
-          // this provider is currently applying updates from the store.
-          console.log('has further updates');
+        if (this.isUpdating || this.isFetching) {
+          console.log('Update or fetch in progress, queueing update');
           this.furtherUpdates.push(update);
         } else {
+          this.isUpdating = true;
           this.emit('update', [update]);
         }
-      } else {
-        console.log('Update is from this provider');
       }
     });
 
-    // listen to an event that fires when a remote update is received
     this.on('update', async (update: Uint8Array) => {
-      this.isUpdating = true;
       await this.update([update]);
 
       // if there are more updates in the meantime, update to the latest state
       while (this.furtherUpdates.length > 0) {
+        console.log(
+          '[update] applying ' + this.furtherUpdates.length + ' further updates'
+        );
         await this.update(this.furtherUpdates.splice(0));
+      }
+
+      // if there are more notifications in the meantime, fetch the latest pod state
+      if (this.requiresFetch) {
+        console.log('[update] Additional fetching required');
+        await this.fetchPod();
       }
 
       this.isUpdating = false;
@@ -383,9 +456,11 @@ export class SolidPersistence extends Observable<string> {
     name: string,
     doc: Y.Doc,
     autoLogin = true,
-    datasetUrl = `${POD_URL}/yjs/docs`
+    resourceUrl = `${POD_URL}/yjs/docs`
   ): Promise<SolidPersistence> {
-    let session: Session, datasetWithAcl: any, thing: any, hasCreatorAccess;
+    let session, hasCreatorAccess;
+
+    hasCreatorAccess = false;
 
     // LOGIN
     if (autoLogin) {
@@ -398,67 +473,22 @@ export class SolidPersistence extends Observable<string> {
     // NOT LOGGED IN
     if (!session.info.isLoggedIn) {
       console.log('Not logged in');
-      return new SolidPersistence(
-        name,
-        doc,
-        session,
-        null,
-        datasetUrl,
-        null,
-        false,
-        null
-      );
+      return new SolidPersistence(name, doc, session, null, false, null);
     }
 
-    // SYNC DOC
-    console.log('Syncing doc');
-    datasetWithAcl = await loadDataset(datasetUrl, false);
-    console.log('Dataset loaded without acl', datasetWithAcl);
-    let value;
-    if (datasetWithAcl) {
-      thing = getYDocThing(datasetWithAcl, datasetUrl, name);
-      value = getYDocValue(thing, name);
-
-      console.log('Thing', thing);
-      console.log('Value', value);
-
-      // SET ACCESS INFO
-      /*hasCreatorAccess = hasCreatorAccessToDatasetWAC(
-        datasetWithAcl,
-        session.info.webId
-      );*/
-      hasCreatorAccess = false;
-    } else {
-      datasetWithAcl = createSolidDataset();
-      hasCreatorAccess = true;
-    }
-
-    if (value) {
-      Y.applyUpdate(doc, value);
-    } else {
-      thing = createYDocThing(name, doc);
-      datasetWithAcl = setThing(datasetWithAcl, thing);
-      await saveDataset(datasetWithAcl, datasetUrl);
-    }
+    // LOAD DATASET
+    let dataset = await SolidDataset.create(name, resourceUrl);
+    if (dataset.value.length > 0) Y.applyUpdate(doc, dataset.value, this);
+    await dataset.update(Y.encodeStateAsUpdate(doc));
 
     // CONNECT TO NOTIFICATIONS
-    let websocket: WebSocket | null = null;
-    try {
-      websocket = new WebSocket('wss://inrupt.net/', ['solid-0.1']);
-      websocket.onopen = function () {
-        this.send('sub ' + datasetUrl);
-      };
-    } catch (e) {
-      console.log('Could not connect to websocket', e);
-    }
+    let websocket = openSolidWebSocket(resourceUrl, 'wss://inrupt.net/');
 
     return new SolidPersistence(
       name,
       doc,
       session,
-      datasetWithAcl,
-      datasetUrl,
-      thing,
+      dataset,
       hasCreatorAccess,
       websocket
     );
@@ -471,35 +501,38 @@ export class SolidPersistence extends Observable<string> {
       Y.transact(
         this.doc,
         () => {
-          for (const update of updates) {
-            Y.applyUpdate(this.doc, update, this);
-          }
+          updates.forEach((update) => {
+            Y.applyUpdate(this.doc, update);
+          });
         },
-        this
+        this,
+        false
       );
 
-      this.thing = updateYDocThing(this.thing, this.doc);
-      this.dataset = setThing(this.dataset, this.thing);
-      await saveDataset(this.dataset, this.datasetUrl);
+      await this.dataset?.update(Y.encodeStateAsUpdate(this.doc));
     } else {
       console.log('Cannot sync update - not logged in');
     }
   }
 
   public async fetchPod() {
+    this.isFetching = true;
+
     if (this.loggedIn) {
-      this.dataset = await loadDataset(this.datasetUrl);
-      this.thing = getYDocThing(this.dataset, this.datasetUrl, this.name);
-      let value = getYDocValue(this.thing, this.name);
+      this.requiresFetch = false;
+      let value = await this.dataset?.fetch();
       if (value) Y.applyUpdate(this.doc, value, this);
+      console.log('Fetched from pod');
     } else {
       console.log('Cannot fetch - not logged in');
     }
+
+    this.isFetching = false;
   }
 
   public async setAgentAccess(
     webId: string,
-    access = {
+    access: AccessModes = {
       read: true,
       append: true,
       write: true,
@@ -508,29 +541,9 @@ export class SolidPersistence extends Observable<string> {
     }
   ) {
     if (this.loggedIn) {
-      await setAgentAccess(this.datasetUrl, webId, access);
+      await setAgentAccess(this.dataset?.url, webId, access);
     } else {
       console.log('Cannot set access - not logged in');
     }
-  }
-
-  public async saveDataset() {
-    this.dataset = await saveDataset(this.dataset, this.datasetUrl);
-    console.log('dataset saved', this.dataset);
-    this.emit('saved', [this]);
-  }
-}
-
-class SolidNotification {
-  public websocket: WebsocketNotification;
-
-  constructor(datasetUrl: string, session: Session) {
-    this.websocket = new WebsocketNotification(datasetUrl, { fetch: fetch });
-
-    this.websocket.on('message', console.log);
-
-    this.websocket.connect();
-
-    console.log('Websocket created', this.websocket);
   }
 }

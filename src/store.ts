@@ -4,8 +4,6 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import {
   SolidPersistence,
   login as solidLogin,
-  getAccessInfoWAC,
-  setAccessWAC,
   getPublicAccessInfo,
   getAgentAccessInfo,
   setAgentAccess,
@@ -16,7 +14,7 @@ export type Todo = {
   completed: boolean;
 };
 
-const fileName = 'todos1';
+const fileName = 'todos2';
 
 export const globalStore = syncedStore({ todos: [] as Todo[] });
 const doc = getYjsDoc(globalStore);
@@ -52,7 +50,7 @@ export const datasetInfo = () => {
 export const access = async () => {
   //await setAgentAccess();
   getPublicAccessInfo();
-  getAgentAccessInfo();
+  //getAgentAccessInfo();
   //await setAccessWAC();
   //accessControl();
 };
