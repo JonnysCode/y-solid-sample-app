@@ -40,6 +40,22 @@ export interface AccessModes {
   controlWrite: boolean;
 }
 
+const writeAccess: AccessModes = {
+  read: true,
+  append: true,
+  write: true,
+  controlRead: false,
+  controlWrite: false,
+};
+
+const readAccess: AccessModes = {
+  read: true,
+  append: false,
+  write: false,
+  controlRead: false,
+  controlWrite: false,
+};
+
 export const login = async (
   oidcIssuer = 'https://inrupt.net',
   clientName = 'SyncedStore'
@@ -128,13 +144,7 @@ export const getAgentAccessInfo = async (
 
 export const setPublicAccess = async (
   resourceUrl: string,
-  access: AccessModes = {
-    read: true,
-    append: false,
-    write: false,
-    controlRead: false,
-    controlWrite: false,
-  }
+  access: AccessModes
 ): Promise<AccessModes | null> => {
   let publicAccess = await universalAccess.setPublicAccess(
     resourceUrl, // Resource
@@ -152,19 +162,13 @@ export const setPublicAccess = async (
 };
 
 export const setAgentAccess = async (
-  datasetUrl = `${POD_URL}/yjs/docs`,
-  webId = 'https://imp.solidcommunity.net/profile/card#me',
-  access: AccessModes = {
-    read: true,
-    append: true,
-    write: true,
-    controlRead: false,
-    controlWrite: false,
-  }
+  resourceUrl: string,
+  webId: string,
+  access: AccessModes
 ) => {
   universalAccess
     .setAgentAccess(
-      datasetUrl, // Resource
+      resourceUrl, // Resource
       webId, // Agent
       access, // Access
       { fetch: fetch } // fetch function from authenticated session
@@ -382,16 +386,18 @@ export class SolidPersistence extends Observable<string> {
 
   public async setAgentAccess(
     webId: string,
-    access: AccessModes = {
-      read: true,
-      append: true,
-      write: true,
-      controlRead: false,
-      controlWrite: false,
-    }
+    access: AccessModes = writeAccess
   ) {
-    if (this.loggedIn) {
-      await setAgentAccess(this.dataset?.url, webId, access);
+    if (this.loggedIn && this.dataset) {
+      await setAgentAccess(this.dataset.url, webId, access);
+    } else {
+      console.log('Cannot set access - not logged in');
+    }
+  }
+
+  public async setPublicAccess(access: AccessModes = readAccess) {
+    if (this.loggedIn && this.dataset) {
+      await setPublicAccess(this.dataset.url, access);
     } else {
       console.log('Cannot set access - not logged in');
     }
