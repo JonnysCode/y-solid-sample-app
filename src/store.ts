@@ -1,4 +1,6 @@
 import { getYjsValue, syncedStore, getYjsDoc } from '@syncedstore/core';
+import * as Y from 'yjs';
+import * as awarenessProtocol from 'y-protocols/awareness.js';
 import { WebrtcProvider } from 'y-webrtc';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import {
@@ -18,8 +20,6 @@ const fileName = 'todos3';
 
 export const globalStore = syncedStore({ todos: [] as Todo[] });
 const doc = getYjsDoc(globalStore);
-
-//new WebrtcProvider('id', getYjsValue(globalStore) as any); // sync via webrtc
 
 const indexeddbPersistence = new IndexeddbPersistence(fileName, doc);
 
@@ -53,4 +53,33 @@ export const access = async () => {
   //getAgentAccessInfo();
   //await setAccessWAC();
   //accessControl();
+};
+
+let webRtcProvider;
+
+export const addWebRtc = () => {
+  const connection = solidPersistence.getWebRtcConnection();
+  if (connection) {
+    /*
+    webRtcProvider = new WebrtcProvider(connection.room, doc, {
+      signaling: null,
+      password: connection.password,
+      awareness: new awarenessProtocol.Awareness(doc),
+      maxConns: null,
+      filterBcConns: null,
+      peerOpts: null,
+    });
+    */
+    webRtcProvider = new WebrtcProvider(connection.room, doc);
+
+    console.log('WebRTC connection added', connection);
+
+    webRtcProvider.on('synced', (event: any) => {
+      console.log('synced', event.status);
+    });
+
+    webRtcProvider.on('peers', (event: any) => {
+      console.log('peers', event.status);
+    });
+  }
 };

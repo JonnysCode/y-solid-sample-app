@@ -28,7 +28,11 @@ import {
   Thing,
 } from '@inrupt/solid-client';
 import { RDF, SCHEMA_INRUPT, DCTERMS } from '@inrupt/vocab-common-rdf';
-import { SolidDataset } from './SolidDataset';
+import {
+  randomWebRtcConnection,
+  SolidDataset,
+  WebRtcConnection,
+} from './SolidDataset';
 
 const POD_URL = 'https://truthless.inrupt.net';
 
@@ -254,11 +258,14 @@ export class SolidPersistence extends Observable<string> {
     // Currently also fetches when an update comes from this provider
     this.websocket.onmessage = async (msg: any) => {
       if (msg.data && msg.data.slice(0, 3) === 'pub') {
-        console.log('[Notification] Resource updated', msg.data);
+        console.log('[Notification] Resource updated', msg);
         if (this.isUpdating || this.isFetching) {
-          console.log('Update or fetch in progress, queueing fetch');
+          console.log(
+            '[Notification] Update or fetch in progress, queueing fetch'
+          );
           this.requiresFetch = true;
         } else {
+          console.log('[Notification] Fetching pod');
           await this.fetchPod();
         }
 
@@ -270,36 +277,44 @@ export class SolidPersistence extends Observable<string> {
     };
 
     this.doc.on('update', (update, origin) => {
+      console.log(
+        '[YDoc] Origin of update: ',
+        origin === this ? 'local' : 'remote'
+      );
       if (origin !== this) {
         if (this.isUpdating || this.isFetching) {
           console.log('Update or fetch in progress, queueing update');
           this.furtherUpdates.push(update);
         } else {
           this.isUpdating = true;
-          this.emit('update', [update]);
+          this.emit('update', [update, origin]);
         }
       }
     });
 
-    this.on('update', async (update: Uint8Array) => {
+    this.on('update', async (update: Uint8Array, origin: any) => {
+      console.log('[Solid] Update received from ', origin);
       await this.update([update]);
+      console.log('[Solid] Update complete');
 
       // if there are more updates in the meantime, update to the latest state
       while (this.furtherUpdates.length > 0) {
         console.log(
-          '[update] applying ' + this.furtherUpdates.length + ' further updates'
+          '[Solid] applying ' + this.furtherUpdates.length + ' further updates'
         );
         await this.update(this.furtherUpdates.splice(0));
       }
 
       // if there are more notifications in the meantime, fetch the latest pod state
       if (this.requiresFetch) {
-        console.log('[update] Additional fetching required');
+        console.log('[Solid] Additional fetching required');
         await this.fetchPod();
       }
 
       this.isUpdating = false;
     });
+
+    this.emit('created', [this]);
   }
 
   public static async create(
@@ -400,6 +415,25 @@ export class SolidPersistence extends Observable<string> {
       await setPublicAccess(this.dataset.url, access);
     } else {
       console.log('Cannot set access - not logged in');
+    }
+  }
+
+  public getWebRtcConnection(): WebRtcConnection | null {
+    if (this.loggedIn && this.dataset) {
+      // try to get a connection from the pod
+      let connection = this.dataset.getWebRtcConnection();
+
+      if (!connection) {
+        // if there is no connection, create one
+        connection = randomWebRtcConnection();
+        // and save it to the pod asynchroniously
+        this.dataset.addWebRtcConnection(connection);
+      }
+
+      return connection;
+    } else {
+      console.log('Cannot get WebRTC connection - not logged in');
+      return null;
     }
   }
 }

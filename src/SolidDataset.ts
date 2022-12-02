@@ -15,6 +15,7 @@ import {
   setThing,
   getStringNoLocale,
   setStringNoLocale,
+  addStringNoLocale,
   getThing,
   saveSolidDatasetAt,
   getSolidDataset,
@@ -24,6 +25,7 @@ import {
   getAgentAccessAll,
   AgentAccess,
   getUrlAll,
+  getStringNoLocaleAll,
   getUrl,
   Thing,
 } from '@inrupt/solid-client';
@@ -62,24 +64,70 @@ const saveDataset = async (dataset: any, datasetUrl: string | Url) => {
   }
 };
 
-const newYDocThing = (name: string, value: Uint8Array, webId: string) => {
+const newYDocThing = (
+  name: string,
+  value: Uint8Array,
+  webId: string
+): Thing => {
   const thing = buildThing(createThing({ name: name }))
     .addStringNoLocale(SCHEMA_INRUPT.name, 'SyncedStore Y.Doc')
     .addUrl(RDF.type, 'https://schema.org/DigitalDocument')
     .addUrl(RDF.type, 'https://docs.yjs.dev/api/y.doc')
     .addUrl(DCTERMS.creator, webId)
+    .addStringNoLocale(DCTERMS.created, new Date().toISOString())
     .addStringNoLocale(SCHEMA_INRUPT.value, fromUint8Array(value))
     .build();
 
   return thing;
 };
 
-const updateYDocThing = (thing: Thing, value: Uint8Array) => {
+const dec2hex = (dec: number): string => {
+  return dec.toString(16).padStart(2, '0');
+};
+
+const generateId = (len: number): string => {
+  var arr = new Uint8Array((len || 40) / 2);
+  window.crypto.getRandomValues(arr);
+  return Array.from(arr, dec2hex).join('');
+};
+
+const addWebRtcConnection = (
+  thing: Thing,
+  connection: WebRtcConnection
+): Thing => {
+  thing = addStringNoLocale(thing, 'https://webrtc.org/room', connection.room);
+
+  if (connection.password) {
+    thing = addStringNoLocale(
+      thing,
+      'https://webrtc.org/password',
+      connection.password
+    );
+  }
+
+  return thing;
+};
+
+const getWebRtcConnection = (thing: Thing): WebRtcConnection | null => {
+  const room = getStringNoLocale(thing, 'https://webrtc.org/room');
+  const password = getStringNoLocale(thing, 'https://webrtc.org/password');
+
+  if (room) {
+    return {
+      room: room,
+      password: password,
+    };
+  }
+
+  return null;
+};
+
+const updateYDocThing = (thing: Thing, value: Uint8Array): Thing => {
   return setStringNoLocale(thing, SCHEMA_INRUPT.value, fromUint8Array(value));
 };
 
 const isContributor = (thing: Thing, webId: string) => {
-  const contributors = getUrlAll(thing, DCTERMS.contributor);
+  const contributors = getStringNoLocaleAll(thing, DCTERMS.contributor);
   console.log('contributors', contributors);
   return contributors.includes(webId);
 };
@@ -90,11 +138,15 @@ const isCreator = (thing: Thing, webId: string) => {
   return creator === webId;
 };
 
-const addContributorToThing = (thing: Thing, webId: string) => {
+const addContributorToThing = (thing: Thing, webId: string): Thing => {
   return setStringNoLocale(thing, DCTERMS.contributor, webId);
 };
 
-const getYDocThing = (dataset: any, datasetUrl: string, name: string) => {
+const getYDocThing = (
+  dataset: any,
+  datasetUrl: string,
+  name: string
+): Thing | null => {
   return getThing(dataset, datasetUrl + '#' + name);
 };
 
@@ -102,6 +154,18 @@ const getYDocValue = (thing: Thing) => {
   const value = getStringNoLocale(thing, SCHEMA_INRUPT.value);
 
   return value ? toUint8Array(value) : null;
+};
+
+export interface WebRtcConnection {
+  room: string;
+  password: string | null;
+}
+
+export const randomWebRtcConnection = (): WebRtcConnection => {
+  return {
+    room: `room@${generateId(6)}`,
+    password: generateId(12),
+  };
 };
 
 export class SolidDataset {
@@ -175,5 +239,19 @@ export class SolidDataset {
 
   public save = async (): Promise<void> => {
     await saveDataset(this.resource, this.url);
+  };
+
+  public addWebRtcConnection = async (
+    connection: WebRtcConnection = randomWebRtcConnection()
+  ): Promise<WebRtcConnection> => {
+    this.thing = addWebRtcConnection(this.thing, connection);
+    this.resource = setThing(this.resource, this.thing);
+    await this.save();
+
+    return connection;
+  };
+
+  public getWebRtcConnection = (): WebRtcConnection | null => {
+    return getWebRtcConnection(this.thing);
   };
 }

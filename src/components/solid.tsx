@@ -1,4 +1,11 @@
-import { login, sessionInfo, datasetInfo, solid, access } from '../store';
+import {
+  login,
+  sessionInfo,
+  datasetInfo,
+  solid,
+  access,
+  addWebRtc,
+} from '../store';
 
 export default function Solid() {
   return (
@@ -21,6 +28,9 @@ export default function Solid() {
         </button>
         <button className='btn-primary' onClick={() => access()}>
           Access
+        </button>
+        <button className='btn-primary' onClick={() => addWebRtc()}>
+          Add WebRTC
         </button>
       </div>
     </div>
