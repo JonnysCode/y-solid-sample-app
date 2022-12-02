@@ -266,12 +266,12 @@ export class SolidPersistence extends Observable<string> {
           this.requiresFetch = true;
         } else {
           console.log('[Notification] Fetching pod');
-          await this.fetchPod();
+          await this.fetch();
         }
 
         while (this.requiresFetch) {
           this.requiresFetch = false;
-          await this.fetchPod();
+          await this.fetch();
         }
       }
     };
@@ -308,7 +308,7 @@ export class SolidPersistence extends Observable<string> {
       // if there are more notifications in the meantime, fetch the latest pod state
       if (this.requiresFetch) {
         console.log('[Solid] Additional fetching required');
-        await this.fetchPod();
+        await this.fetch();
       }
 
       this.isUpdating = false;
@@ -364,34 +364,37 @@ export class SolidPersistence extends Observable<string> {
   }
 
   public async update(updates: Uint8Array[]) {
-    if (this.loggedIn) {
-      await this.fetchPod(); // dataset and thing need to be fetched before an update (avoid 409)
-
-      Y.transact(
-        this.doc,
+    if (this.loggedIn && this.dataset) {
+      await this.dataset.fetchAndUpdate(
+        (value: Uint8Array) => Y.applyUpdate(this.doc, value, this),
         () => {
-          updates.forEach((update) => {
-            Y.applyUpdate(this.doc, update);
-          });
+          Y.transact(
+            this.doc,
+            () => {
+              updates.forEach((update) => {
+                Y.applyUpdate(this.doc, update);
+              });
+            },
+            this,
+            false
+          );
         },
-        this,
-        false
+        () => Y.encodeStateAsUpdate(this.doc)
       );
-
-      await this.dataset?.update(Y.encodeStateAsUpdate(this.doc));
     } else {
       console.log('Cannot sync update - not logged in');
     }
   }
 
-  public async fetchPod() {
+  public async fetch() {
     this.isFetching = true;
 
-    if (this.loggedIn) {
-      this.requiresFetch = false;
-      let value = await this.dataset?.fetch();
+    if (this.loggedIn && this.dataset) {
+      let value = await this.dataset.fetch();
       if (value) Y.applyUpdate(this.doc, value, this);
+
       console.log('Fetched from pod');
+      this.requiresFetch = false;
     } else {
       console.log('Cannot fetch - not logged in');
     }

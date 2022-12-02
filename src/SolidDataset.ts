@@ -53,15 +53,11 @@ const loadDataset = async (datasetUrl: string | Url, withAcl = false) => {
 };
 
 const saveDataset = async (dataset: any, datasetUrl: string | Url) => {
-  try {
-    await saveSolidDatasetAt(
-      datasetUrl,
-      dataset,
-      { fetch: fetch } // fetch function from authenticated session
-    );
-  } catch (error) {
-    console.log('Error saving dataset: ', error);
-  }
+  await saveSolidDatasetAt(
+    datasetUrl,
+    dataset,
+    { fetch: fetch } // fetch function from authenticated session
+  );
 };
 
 const newYDocThing = (
@@ -235,6 +231,48 @@ export class SolidDataset {
     this.thing = updateYDocThing(this.thing, value);
     this.resource = setThing(this.resource, this.thing);
     await this.save();
+  };
+
+  /** Fetching and updating must be done in sync
+   *
+   * @param applyFetch
+   * @param applyUpdate
+   * @param getValue
+   */
+  public fetchAndUpdate = async (
+    applyFetch: (value: Uint8Array) => void,
+    applyUpdate: () => void,
+    getValue: () => Uint8Array
+  ): Promise<void> => {
+    let isSynced = false;
+    let maxTries = 5;
+
+    while (!isSynced && maxTries > 0) {
+      console.log(
+        '[SolidDataset] Fetch and update attempt,',
+        maxTries,
+        'tries left'
+      );
+      await this.fetch();
+      applyFetch(this.value);
+
+      applyUpdate();
+
+      try {
+        await this.update(getValue());
+        isSynced = true;
+        console.log('[SolidDataset] Fetch and update success');
+      } catch (e: any) {
+        if (e.statusCode === 409) {
+          console.log(
+            '[SolidDataset] Conflict saving dataset, fetching required...'
+          );
+        } else {
+          console.log('[SolidDataset] Error saving the dataset', e);
+        }
+        maxTries--;
+      }
+    }
   };
 
   public save = async (): Promise<void> => {
