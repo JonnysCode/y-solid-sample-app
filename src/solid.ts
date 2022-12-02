@@ -1,6 +1,5 @@
 import { Observable } from 'lib0/observable';
 import * as Y from 'yjs';
-import { fromUint8Array, toUint8Array } from 'js-base64';
 
 import {
   handleIncomingRedirect,
@@ -9,25 +8,10 @@ import {
   Session,
 } from '@inrupt/solid-client-authn-browser';
 import {
-  buildThing,
-  createSolidDataset,
-  createThing,
-  setThing,
-  getStringNoLocale,
-  setStringNoLocale,
-  getThing,
-  saveSolidDatasetAt,
-  getSolidDataset,
-  Url,
   universalAccess,
-  getSolidDatasetWithAcl,
   getAgentAccessAll,
   AgentAccess,
-  getUrlAll,
-  getUrl,
-  Thing,
 } from '@inrupt/solid-client';
-import { RDF, SCHEMA_INRUPT, DCTERMS } from '@inrupt/vocab-common-rdf';
 import {
   randomWebRtcConnection,
   SolidDataset,
@@ -213,6 +197,13 @@ const openSolidWebSocket = (
   return null;
 };
 
+const syncInterval = (fn: () => {}, interval: number = 5000) => {
+  (async function i() {
+    await fn();
+    setTimeout(i, interval);
+  })();
+};
+
 export class SolidPersistence extends Observable<string> {
   public name: string;
   public doc: Y.Doc;
@@ -279,20 +270,40 @@ export class SolidPersistence extends Observable<string> {
     this.doc.on('update', (update, origin) => {
       console.log(
         '[YDoc] Origin of update: ',
-        origin === this ? 'local' : 'remote'
+        origin === this ? 'local' : 'remote',
+        !origin ? 'and null' : ''
       );
+
+      // TODO: Filter out updates that are not relevant to this provider
       if (origin !== this) {
-        if (this.isUpdating || this.isFetching) {
-          console.log('Update or fetch in progress, queueing update');
-          this.furtherUpdates.push(update);
-        } else {
-          this.isUpdating = true;
-          this.emit('update', [update, origin]);
-        }
+        this.furtherUpdates.push(update);
       }
     });
 
-    this.on('update', async (update: Uint8Array, origin: any) => {
+    syncInterval(async () => {
+      if (this.furtherUpdates.length > 0) {
+        this.isUpdating = true;
+        console.log(
+          '[Solid] Processing ',
+          this.furtherUpdates.length,
+          'queued updates'
+        );
+        await this.update(this.furtherUpdates.splice(0));
+
+        // if there are any notifications during the update, fetch the latest pod state
+        if (this.requiresFetch) {
+          console.log('[Solid] Additional fetching required');
+          await this.fetch();
+        }
+
+        this.isUpdating = false;
+        console.log('[Solid] Finished processing updates');
+      } else {
+        console.log('[Solid] No updates to process');
+      }
+    }, 10_000);
+
+    this.on('update2', async (update: Uint8Array, origin: any) => {
       console.log('[Solid] Update received from ', origin);
       await this.update([update]);
       console.log('[Solid] Update complete');
