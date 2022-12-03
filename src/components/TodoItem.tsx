@@ -1,9 +1,12 @@
-import { useSyncedStores } from "@syncedstore/react";
-import { useState } from "react";
-import { globalStore, Todo } from "./store";
+import { useSyncedStores } from '@syncedstore/react';
+import { useState } from 'react';
+import { globalStore, Todo } from '../store';
 
 export function TodoItem(props: { todo: Todo }) {
-  const [todo, store] = useSyncedStores([props.todo, globalStore], [props.todo]);
+  const [todo, store] = useSyncedStores(
+    [props.todo, globalStore],
+    [props.todo]
+  );
   const [editing, setEditing] = useState(false);
   // const [todo, store] = useSyncedStores(globalStore], [props.todo]);
 
@@ -15,11 +18,11 @@ export function TodoItem(props: { todo: Todo }) {
   }
 
   return (
-    <li className={editing ? "editing" : todo.completed ? "completed" : "view"}>
-      <div className="view">
+    <li className={editing ? 'editing' : todo.completed ? 'completed' : 'view'}>
+      <div className='view'>
         <input
-          className="toggle"
-          type="checkbox"
+          className='toggle'
+          type='checkbox'
           checked={todo.completed}
           onChange={() => (todo.completed = !todo.completed)}
         />
@@ -30,14 +33,14 @@ export function TodoItem(props: { todo: Todo }) {
         >
           {todo.title}
         </label>
-        <button className="destroy" onClick={removeTodo}></button>
+        <button className='destroy' onClick={removeTodo}></button>
       </div>
       {editing && (
         <input
-          className="edit"
+          className='edit'
           defaultValue={todo.title}
           onKeyPress={(event) => {
-            if (event.key === "Enter") {
+            if (event.key === 'Enter') {
               (event.target as HTMLInputElement).blur();
             }
           }}

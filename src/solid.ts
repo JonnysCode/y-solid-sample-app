@@ -210,12 +210,11 @@ export class SolidPersistence extends Observable<string> {
   public loggedIn: boolean;
   public session: Session;
   public dataset: SolidDataset | null;
-  public hasCreatorAccess: boolean;
   public websocket: any;
+  public updateInterval: number;
 
   private isUpdating: boolean;
   private furtherUpdates: any[];
-  private lastFetched: Date | null;
   private requiresFetch: boolean;
   private isFetching: boolean;
 
@@ -224,27 +223,25 @@ export class SolidPersistence extends Observable<string> {
     doc: Y.Doc,
     session: Session,
     dataset: SolidDataset | null,
-    hasCreatorAccess: boolean,
-    websocket: any
+    websocket: any,
+    updateInterval: number
   ) {
     super();
 
     this.name = name;
     this.doc = doc;
-
+    this.session = session;
     this.dataset = dataset;
 
-    this.session = session;
+    this.websocket = websocket;
+    this.updateInterval = updateInterval;
+
     this.loggedIn = this.session.info.isLoggedIn;
-    this.hasCreatorAccess = hasCreatorAccess;
 
     this.isUpdating = false;
     this.furtherUpdates = [];
-    this.lastFetched = null;
     this.isFetching = false;
     this.requiresFetch = false;
-
-    this.websocket = websocket;
 
     // Currently also fetches when an update comes from this provider
     this.websocket.onmessage = async (msg: any) => {
@@ -275,6 +272,9 @@ export class SolidPersistence extends Observable<string> {
       );
 
       // TODO: Filter out updates that are not relevant to this provider
+      // Should we ignore updates from webRtc provider
+      // -> only from this client
+      // -> only when not collaborator in Solid
       if (origin !== this) {
         this.furtherUpdates.push(update);
       }
@@ -301,7 +301,7 @@ export class SolidPersistence extends Observable<string> {
       } else {
         console.log('[Solid] No updates to process');
       }
-    }, 10_000);
+    }, updateInterval);
 
     this.on('update2', async (update: Uint8Array, origin: any) => {
       console.log('[Solid] Update received from ', origin);
@@ -332,13 +332,11 @@ export class SolidPersistence extends Observable<string> {
     name: string,
     doc: Y.Doc,
     autoLogin = true,
-    resourceUrl = `${POD_URL}/yjs/docs`
+    resourceUrl = `${POD_URL}/yjs/docs`,
+    updateInterval: number = 10000
   ): Promise<SolidPersistence> {
-    let session, hasCreatorAccess;
-
-    hasCreatorAccess = false;
-
     // LOGIN
+    let session;
     if (autoLogin) {
       session = await login();
     } else {
@@ -349,7 +347,14 @@ export class SolidPersistence extends Observable<string> {
     // NOT LOGGED IN
     if (!session.info.isLoggedIn || !session.info.webId) {
       console.log('Not logged in');
-      return new SolidPersistence(name, doc, session, null, false, null);
+      return new SolidPersistence(
+        name,
+        doc,
+        session,
+        null,
+        null,
+        updateInterval
+      );
     }
 
     // LOAD DATASET
@@ -369,8 +374,8 @@ export class SolidPersistence extends Observable<string> {
       doc,
       session,
       dataset,
-      hasCreatorAccess,
-      websocket
+      websocket,
+      updateInterval
     );
   }
 
