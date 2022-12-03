@@ -21,7 +21,7 @@ function TodoApp() {
   const hasCompletedTodos = !!store.todos.find((t) => t.completed);
 
   return (
-    <div className='todoRoot w-screen flex flex-col items-center justify-center'>
+    <div className='todoRoot flex flex-col items-center justify-center'>
       <section className='todoapp'>
         <header className='header w-96'>
           <h1>todos</h1>

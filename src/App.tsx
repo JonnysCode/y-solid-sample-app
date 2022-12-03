@@ -1,18 +1,18 @@
-import { useSyncedStore } from '@syncedstore/react';
-import React, { useState } from 'react';
-import { globalStore } from './store';
-import TodoApp from './components/TodoApp';
-import Layout from './components/Layout';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './pages/Layout';
+import Home from './pages/Home';
+import Tasklist from './pages/Tasklist';
 
 function App() {
-  const store = useSyncedStore(globalStore);
-
   return (
-    <div className='w-screen h-screen flex flex-col items-center justify-center'>
-      <Layout>
-        <TodoApp />
-      </Layout>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path='tasklist' element={<Tasklist />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
