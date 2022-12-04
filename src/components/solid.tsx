@@ -14,7 +14,10 @@ export default function Solid() {
         Solid Debugging
       </h1>
       <div className='flex flex-row gap-2'>
-        <button className='btn-primary' onClick={() => login()}>
+        <button
+          className='btn-primary'
+          onClick={() => login('https://inrupt.net/')}
+        >
           Login
         </button>
         <button className='btn-primary' onClick={() => sessionInfo()}>

@@ -122,14 +122,22 @@ const updateYDocThing = (thing: Thing, value: Uint8Array): Thing => {
   return setStringNoLocale(thing, SCHEMA_INRUPT.value, fromUint8Array(value));
 };
 
+const getContributors = (thing: Thing) => {
+  return getStringNoLocaleAll(thing, DCTERMS.contributor);
+};
+
 const isContributor = (thing: Thing, webId: string) => {
-  const contributors = getStringNoLocaleAll(thing, DCTERMS.contributor);
+  const contributors = getContributors(thing);
   console.log('contributors', contributors);
   return contributors.includes(webId);
 };
 
+const getCreator = (thing: Thing) => {
+  return getUrl(thing, DCTERMS.creator);
+};
+
 const isCreator = (thing: Thing, webId: string) => {
-  const creator = getUrl(thing, DCTERMS.creator);
+  const creator = getCreator(thing);
   console.log('creator', creator);
   return creator === webId;
 };
@@ -170,6 +178,8 @@ export class SolidDataset {
   public resource: any;
   public thing: any;
   public value: Uint8Array;
+  public creator: string | null;
+  public contributors: string[];
 
   private constructor(
     name: string,
@@ -183,6 +193,9 @@ export class SolidDataset {
     this.resource = resource;
     this.thing = thing;
     this.value = value;
+
+    this.creator = getCreator(thing);
+    this.contributors = getContributors(thing);
   }
 
   public static async create(name: string, url: string, webId: string) {

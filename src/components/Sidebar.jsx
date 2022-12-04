@@ -33,12 +33,16 @@ const MySidebar = (props) => {
               Project View
             </Sidebar.Item>
           </Link>
-          <Sidebar.Item href='#' icon={UserGroupIcon}>
-            Users
-          </Sidebar.Item>
-          <Sidebar.Item href='#' icon={UserIcon}>
-            Profile
-          </Sidebar.Item>
+          <Link to='/collaborators'>
+            <Sidebar.Item href='#' icon={UserGroupIcon}>
+              Users
+            </Sidebar.Item>
+          </Link>
+          <Link to='/profile'>
+            <Sidebar.Item href='#' icon={UserIcon}>
+              Profile
+            </Sidebar.Item>
+          </Link>
         </Sidebar.ItemGroup>
       </Sidebar.Items>
     </Sidebar>

@@ -7,8 +7,6 @@ import {
   SolidPersistence,
   login as solidLogin,
   getPublicAccessInfo,
-  getAgentAccessInfo,
-  setAgentAccess,
 } from './solid';
 
 export type Todo = {
@@ -27,15 +25,19 @@ indexeddbPersistence.on('synced', () => {
   console.log('content from the database is loaded');
 });
 
-const solidPersistence = await SolidPersistence.create(fileName, doc);
+const solidPersistence = await SolidPersistence.create(fileName, doc, false);
 
 export const solid = () => {
   console.log('solid', solidPersistence);
 };
 
-export const login = async () => {
-  await solidLogin();
+export const login = async (oidcIssuer: string) => {
+  await solidLogin(oidcIssuer);
   console.log('awaited login');
+};
+
+export const getCollaborators = async () => {
+  return solidPersistence.getCollaborators();
 };
 
 export const sessionInfo = () => {

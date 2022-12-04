@@ -204,6 +204,11 @@ const syncInterval = (fn: () => {}, interval: number = 5000) => {
   })();
 };
 
+export interface Collaborator {
+  webId: string;
+  isCreator: boolean;
+}
+
 export class SolidPersistence extends Observable<string> {
   public name: string;
   public doc: Y.Doc;
@@ -244,25 +249,27 @@ export class SolidPersistence extends Observable<string> {
     this.requiresFetch = false;
 
     // Currently also fetches when an update comes from this provider
-    this.websocket.onmessage = async (msg: any) => {
-      if (msg.data && msg.data.slice(0, 3) === 'pub') {
-        console.log('[Notification] Resource updated', msg);
-        if (this.isUpdating || this.isFetching) {
-          console.log(
-            '[Notification] Update or fetch in progress, queueing fetch'
-          );
-          this.requiresFetch = true;
-        } else {
-          console.log('[Notification] Fetching pod');
-          await this.fetch();
-        }
+    if (this.websocket) {
+      this.websocket.onmessage = async (msg: any) => {
+        if (msg.data && msg.data.slice(0, 3) === 'pub') {
+          console.log('[Notification] Resource updated', msg);
+          if (this.isUpdating || this.isFetching) {
+            console.log(
+              '[Notification] Update or fetch in progress, queueing fetch'
+            );
+            this.requiresFetch = true;
+          } else {
+            console.log('[Notification] Fetching pod');
+            await this.fetch();
+          }
 
-        while (this.requiresFetch) {
-          this.requiresFetch = false;
-          await this.fetch();
+          while (this.requiresFetch) {
+            this.requiresFetch = false;
+            await this.fetch();
+          }
         }
-      }
-    };
+      };
+    }
 
     this.doc.on('update', (update, origin) => {
       console.log(
@@ -454,5 +461,25 @@ export class SolidPersistence extends Observable<string> {
       console.log('Cannot get WebRTC connection - not logged in');
       return null;
     }
+  }
+
+  public getCollaborators(): Collaborator[] {
+    let collaborators: Collaborator[] = [];
+    if (this.loggedIn && this.dataset) {
+      collaborators.push({
+        webId: this.dataset.creator || 'unknown',
+        isCreator: true,
+      });
+      collaborators.push(
+        ...this.dataset.contributors.map((webId) => ({
+          webId,
+          isCreator: false,
+        }))
+      );
+    } else {
+      console.log('Cannot get collaborators - not logged in');
+    }
+
+    return collaborators;
   }
 }
