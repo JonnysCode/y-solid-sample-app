@@ -1,79 +1,68 @@
 import React from 'react';
 
-import {
-  useSession,
-  CombinedDataProvider,
-  LogoutButton,
-  Image,
-  Text,
-} from '@inrupt/solid-ui-react';
 import { Button, Card, TextInput } from 'flowbite-react';
 import { Collaborator } from '../solid';
 import { addReadAccess, addWriteAccess, getCollaborators } from '../store';
-import LoginForm from '../components/LoginForm';
 
 const Collaborators = () => {
-  const { session, sessionRequestInProgress } = useSession();
   const [webId, setWebId] = React.useState('');
 
   return (
     <div className='h-full flex flex-col items-center justify-center gap-4'>
-      {session.info.isLoggedIn ? (
-        <div className='max-w-sm'>
-          <Card>
-            <div className='mb-4 flex items-center justify-between'>
-              <h5 className='text-xl font-bold leading-none text-gray-900 dark:text-white'>
-                Collaborators
-              </h5>
+      <div className='max-w-sm'>
+        <Card>
+          <div className='mb-4 flex items-center justify-between'>
+            <h5 className='text-xl font-bold leading-none text-gray-900 dark:text-white'>
+              Collaborators
+            </h5>
+          </div>
+          <div className='flow-root'>
+            <ul className='divide-y divide-gray-200 dark:divide-gray-700'>
+              {getCollaborators().map((collaborator, i) => {
+                return (
+                  <UserItem
+                    collaborator={collaborator}
+                    key={collaborator.webId + i}
+                  />
+                );
+              })}
+            </ul>
+          </div>
+          <div className='mt-4 flex items-center justify-between'>
+            <h5 className='text-xl font-bold leading-none text-gray-900 dark:text-white'>
+              Access Control
+            </h5>
+          </div>
+          <form className='flex flex-col gap-4'>
+            <div>
+              <TextInput
+                id='provider'
+                type='text'
+                value={webId}
+                placeholder='WebId'
+                onChange={(e) => setWebId(e.target.value)}
+                required={true}
+              />
             </div>
-            <div className='flow-root'>
-              <ul className='divide-y divide-gray-200 dark:divide-gray-700'>
-                {getCollaborators().map((collaborator, i) => {
-                  return (
-                    <UserItem
-                      collaborator={collaborator}
-                      key={collaborator.webId + i}
-                    />
-                  );
-                })}
-              </ul>
+            <div className='flex flex-row gap-4 w-full'>
+              <Button
+                gradientDuoTone='pinkToOrange'
+                outline={true}
+                onClick={() => addWriteAccess(webId)}
+              >
+                Add Write Access
+              </Button>
+              <Button
+                gradientDuoTone='pinkToOrange'
+                outline={true}
+                onClick={() => addReadAccess(webId)}
+              >
+                Add Read Access
+              </Button>
             </div>
-            <div className='mt-4 flex items-center justify-between'>
-              <h5 className='text-xl font-bold leading-none text-gray-900 dark:text-white'>
-                Access Control
-              </h5>
-            </div>
-            <form className='flex flex-col gap-4'>
-              <div>
-                <TextInput
-                  id='provider'
-                  type='text'
-                  value={webId}
-                  placeholder='WebId'
-                  onChange={(e) => setWebId(e.target.value)}
-                  required={true}
-                />
-              </div>
-              <div className='flex flex-row gap-4'>
-                <Button
-                  gradientDuoTone='pinkToOrange'
-                  onClick={() => addWriteAccess(webId)}
-                >
-                  Add Write Access
-                </Button>
-                <Button
-                  gradientDuoTone='pinkToOrange'
-                  onClick={() => addReadAccess(webId)}
-                >
-                  Add Read Access
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      ) : (
-        <LoginForm />
-      )}
+          </form>
+        </Card>
+      </div>
     </div>
   );
 };

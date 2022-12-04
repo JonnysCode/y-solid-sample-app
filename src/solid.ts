@@ -46,6 +46,7 @@ const readAccess: AccessModes = {
 
 export const login = async (
   oidcIssuer = 'https://inrupt.net',
+  redirectUrl = window.location.href,
   clientName = 'SyncedStore'
 ): Promise<Session> => {
   await handleIncomingRedirect({ restorePreviousSession: true });
@@ -55,7 +56,7 @@ export const login = async (
   if (!session.info.isLoggedIn) {
     await session.login({
       oidcIssuer: oidcIssuer,
-      redirectUrl: window.location.href,
+      redirectUrl: redirectUrl,
       clientName: clientName,
     });
   }

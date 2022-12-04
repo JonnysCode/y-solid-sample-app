@@ -2,29 +2,15 @@ import {
   useSession,
   CombinedDataProvider,
   LogoutButton,
-  Image,
   Text,
 } from '@inrupt/solid-ui-react';
-import {
-  Label,
-  TextInput,
-  Checkbox,
-  Button,
-  Select,
-  Card,
-} from 'flowbite-react';
-import { useState } from 'react';
-import { FOAF, VCARD } from '@inrupt/lit-generated-vocab-common';
-
-import { login } from '../store';
-import LoginForm from '../components/LoginForm';
+import { Button, Card } from 'flowbite-react';
+import { FOAF } from '@inrupt/lit-generated-vocab-common';
 
 const Profile = () => {
-  const { session, sessionRequestInProgress } = useSession();
-
   return (
     <div className='h-full flex flex-col items-center justify-center'>
-      {!session.info.isLoggedIn ? <LoginForm /> : <ProfileCard />}
+      <ProfileCard />
     </div>
   );
 };

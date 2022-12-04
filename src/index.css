@@ -14,4 +14,8 @@
   .btn-sm {
     @apply px-3 py-1.5 text-sm;
   }
+
+  .bg-main {
+    @apply bg-gradient-to-br from-pink-500 to-orange-400;
+  }
 }

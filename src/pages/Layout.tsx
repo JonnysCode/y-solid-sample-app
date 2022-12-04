@@ -4,9 +4,9 @@ import MySidebar from '../components/Sidebar';
 
 const Layout = () => {
   return (
-    <div className='flex flex-row w-screen h-screen bg-zinc-50'>
+    <div className='flex flex-row w-screen h-screen bg-main'>
       <MySidebar className='m-2 shadow-xl ' />
-      <div className='grow'>
+      <div className='grow h-screen'>
         <Outlet />
       </div>
     </div>
