@@ -347,7 +347,7 @@ export class SolidPersistence extends Observable<string> {
     if (autoLogin) {
       session = await login();
     } else {
-      await handleIncomingRedirect();
+      await handleIncomingRedirect({ restorePreviousSession: true });
       session = getDefaultSession();
     }
 
@@ -481,5 +481,21 @@ export class SolidPersistence extends Observable<string> {
     }
 
     return collaborators;
+  }
+
+  public async addWriteAccess(webId: string) {
+    if (this.loggedIn && this.dataset) {
+      await setAgentAccess(this.dataset.url, webId, writeAccess);
+    } else {
+      console.log('Cannot add collaborator - not logged in');
+    }
+  }
+
+  public async addReadAccess(webId: string) {
+    if (this.loggedIn && this.dataset) {
+      await setAgentAccess(this.dataset.url, webId, readAccess);
+    } else {
+      console.log('Cannot add collaborator - not logged in');
+    }
   }
 }

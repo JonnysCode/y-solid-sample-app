@@ -36,8 +36,16 @@ export const login = async (oidcIssuer: string) => {
   console.log('awaited login');
 };
 
-export const getCollaborators = async () => {
+export const getCollaborators = () => {
   return solidPersistence.getCollaborators();
+};
+
+export const addWriteAccess = async (webId: string) => {
+  await solidPersistence.addWriteAccess(webId);
+};
+
+export const addReadAccess = async (webId: string) => {
+  await solidPersistence.addWriteAccess(webId);
 };
 
 export const sessionInfo = () => {

@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { FOAF, VCARD } from '@inrupt/lit-generated-vocab-common';
 
 import { login } from '../store';
+import LoginForm from '../components/LoginForm';
 
 const Profile = () => {
   const { session, sessionRequestInProgress } = useSession();
@@ -24,36 +25,6 @@ const Profile = () => {
   return (
     <div className='h-full flex flex-col items-center justify-center'>
       {!session.info.isLoggedIn ? <LoginForm /> : <ProfileCard />}
-    </div>
-  );
-};
-
-const LoginForm = () => {
-  const [provider, setProvider] = useState('https://inrupt.net/');
-
-  return (
-    <div className='max-w-sm'>
-      <Card imgSrc='../assets/images/solid.png'>
-        <h5 className='text-2xl font-bold tracking-tight text-zinc-900 dark:text-white'>
-          SOLID Login
-        </h5>
-        <form className='flex flex-col gap-4'>
-          <div id='select'>
-            <div className='mb-2 block'>
-              <Label htmlFor='provider' value='Pod Provider' />
-            </div>
-            <TextInput
-              id='provider'
-              type='text'
-              value={provider}
-              onChange={(e) => setProvider(e.target.value)}
-              required={true}
-            />
-          </div>
-
-          <Button onClick={() => login(provider)}>Log in</Button>
-        </form>
-      </Card>
     </div>
   );
 };
@@ -83,7 +54,9 @@ const ProfileCard = () => {
               onError={console.error}
               onLogout={() => window.location.reload()}
             >
-              <Button>Log out</Button>
+              <Button outline={true} gradientDuoTone='pinkToOrange'>
+                Log out
+              </Button>
             </LogoutButton>
           </div>
         </Card>
