@@ -48,14 +48,20 @@ const Collaborators = () => {
               <Button
                 gradientDuoTone='pinkToOrange'
                 outline={true}
-                onClick={() => addWriteAccess(webId)}
+                onClick={() => {
+                  addWriteAccess(webId);
+                  setWebId('');
+                }}
               >
                 Add Write Access
               </Button>
               <Button
                 gradientDuoTone='pinkToOrange'
                 outline={true}
-                onClick={() => addReadAccess(webId)}
+                onClick={() => {
+                  addReadAccess(webId);
+                  setWebId('');
+                }}
               >
                 Add Read Access
               </Button>

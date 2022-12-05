@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-
-import { EditorContent } from '@tiptap/react';
+// @ts-ignore
+import { EditorContent, useEditor } from '@tiptap/react';
 import { Editor } from '@tiptap/core';
 // @ts-ignore
 import StarterKit from '@tiptap/starter-kit';
@@ -10,7 +10,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 
-import { webrtcProvider } from '../store';
+import { globalStore, Task, webrtcProvider } from '../store';
+import { useSyncedStores } from '@syncedstore/react';
 
 const colors = [
   '#958DF1',
@@ -29,18 +30,24 @@ const getRandomColor = () => getRandomElement(colors);
 const getRandomName = () => getRandomElement(names);
 
 interface Props {
-  fragment: any;
+  task: Task;
+  className?: string;
 }
 
 const TipTap = (props: Props) => {
-  const editor = new Editor({
+  const [task, store] = useSyncedStores(
+    [props.task, globalStore],
+    [props.task]
+  );
+
+  const editor = useEditor({
     extensions: [
       StarterKit,
       Placeholder.configure({
         placeholder: 'Write something …',
       }),
       Collaboration.configure({
-        fragment: props.fragment,
+        fragment: task.fragment,
       }),
       CollaborationCursor.configure({
         provider: webrtcProvider,
@@ -50,8 +57,7 @@ const TipTap = (props: Props) => {
   });
 
   return (
-    <div className='editor'>
-      <MenuBar editor={editor} />
+    <div className={props.className + ' editor'}>
       {/* @ts-ignore*/}
       <EditorContent editor={editor} />
     </div>

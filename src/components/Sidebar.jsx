@@ -24,22 +24,22 @@ const MySidebar = (props) => {
       <Sidebar.Items>
         <Sidebar.ItemGroup>
           <Link to='/'>
-            <Sidebar.Item href='/' icon={ViewColumnsIcon}>
+            <Sidebar.Item as='div' icon={ViewColumnsIcon}>
               Overview
             </Sidebar.Item>
           </Link>
           <Link to='/tasklist'>
-            <Sidebar.Item icon={DocumentDuplicateIcon}>
+            <Sidebar.Item as='div' icon={DocumentDuplicateIcon}>
               Project View
             </Sidebar.Item>
           </Link>
           <Link to='/collaborators'>
-            <Sidebar.Item href='#' icon={UserGroupIcon}>
+            <Sidebar.Item as='div' icon={UserGroupIcon}>
               Users
             </Sidebar.Item>
           </Link>
           <Link to='/profile'>
-            <Sidebar.Item href='#' icon={UserIcon}>
+            <Sidebar.Item as='div' icon={UserIcon}>
               Profile
             </Sidebar.Item>
           </Link>

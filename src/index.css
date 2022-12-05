@@ -16,6 +16,6 @@
   }
 
   .bg-main {
-    @apply bg-gradient-to-br from-pink-500 to-orange-400;
+    @apply bg-gradient-to-br from-teal-300 to-lime-200;
   }
 }
