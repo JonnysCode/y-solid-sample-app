@@ -15,6 +15,15 @@ module.exports = {
         secondary: colors.yellow,
         neutral: colors.zinc,
       },
+      backgroundImage: {
+        hexagon: "url('./assets/hexagon.svg')",
+        hexagon2: "url('./assets/solid-background.svg')",
+      },
+    },
+  },
+  variants: {
+    extend: {
+      visibility: ['group-hover'],
     },
   },
   plugins: [require('flowbite/plugin')],

@@ -40,7 +40,7 @@ const ProfileCard = () => {
               onError={console.error}
               onLogout={() => window.location.reload()}
             >
-              <Button outline={true} gradientDuoTone='pinkToOrange'>
+              <Button outline={true} gradientDuoTone='purpleToBlue'>
                 Log out
               </Button>
             </LogoutButton>

@@ -20,33 +20,40 @@ const Login = () => {
   }, [session, state?.path, navigate]);
 
   return (
-    <div className='h-screen w-screen flex flex-col items-center justify-center bg-main'>
-      <div className='max-w-sm'>
-        <Card imgSrc='../assets/images/solid.png' className='w-72'>
-          <h5 className='my-2 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white'>
-            SOLID Login
-          </h5>
-          <form className='flex flex-col gap-4'>
-            <div id='select'>
-              <div className='mb-2 block'>
-                <Label htmlFor='provider' value='Pod Provider' />
+    <div className='h-screen w-screen bg-main'>
+      <div className='h-full w-full flex flex-col items-center justify-center bg-hexagon2'>
+        <img
+          className='h-28 m-[-56px] z-40'
+          src='./assets/images/solid-logo.svg'
+          alt='logo'
+        />
+        <div className='max-w-sm'>
+          <Card className='w-80'>
+            <h5 className='mb-2 mt-10 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white'>
+              SOLID Login
+            </h5>
+            <form className='flex flex-col gap-4'>
+              <div id='select'>
+                <div className='mb-2 block'>
+                  <Label htmlFor='provider' value='Pod Provider' />
+                </div>
+                <TextInput
+                  id='provider'
+                  type='text'
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value)}
+                  required={true}
+                />
               </div>
-              <TextInput
-                id='provider'
-                type='text'
-                value={provider}
-                onChange={(e) => setProvider(e.target.value)}
-                required={true}
-              />
-            </div>
-            <Button
-              gradientDuoTone='pinkToOrange'
-              onClick={() => handleLogin(provider)}
-            >
-              Log in
-            </Button>
-          </form>
-        </Card>
+              <Button
+                gradientDuoTone='purpleToBlue'
+                onClick={() => handleLogin(provider)}
+              >
+                Log in
+              </Button>
+            </form>
+          </Card>
+        </div>
       </div>
     </div>
   );

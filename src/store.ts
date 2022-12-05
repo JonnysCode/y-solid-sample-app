@@ -1,11 +1,4 @@
-import {
-  getYjsValue,
-  syncedStore,
-  getYjsDoc,
-  SyncedXml,
-} from '@syncedstore/core';
-import * as Y from 'yjs';
-import * as awarenessProtocol from 'y-protocols/awareness.js';
+import { syncedStore, getYjsDoc, SyncedXml } from '@syncedstore/core';
 import { WebrtcProvider } from 'y-webrtc';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import {

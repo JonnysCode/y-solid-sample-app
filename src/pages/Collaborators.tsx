@@ -44,27 +44,31 @@ const Collaborators = () => {
                 required={true}
               />
             </div>
-            <div className='flex flex-row gap-4 w-full'>
-              <Button
-                gradientDuoTone='pinkToOrange'
-                outline={true}
-                onClick={() => {
-                  addWriteAccess(webId);
-                  setWebId('');
-                }}
-              >
-                Add Write Access
-              </Button>
-              <Button
-                gradientDuoTone='pinkToOrange'
-                outline={true}
-                onClick={() => {
-                  addReadAccess(webId);
-                  setWebId('');
-                }}
-              >
-                Add Read Access
-              </Button>
+            <div className='flex flex-row gap-4 w-full items-center justify-between'>
+              <div className=''>
+                <Button
+                  gradientDuoTone='purpleToBlue'
+                  outline={true}
+                  onClick={() => {
+                    addWriteAccess(webId);
+                    setWebId('');
+                  }}
+                >
+                  Add Write Access
+                </Button>
+              </div>
+              <div className=''>
+                <Button
+                  gradientDuoTone='purpleToBlue'
+                  outline={true}
+                  onClick={() => {
+                    addReadAccess(webId);
+                    setWebId('');
+                  }}
+                >
+                  Add Read Access
+                </Button>
+              </div>
             </div>
           </form>
         </Card>

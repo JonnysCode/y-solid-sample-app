@@ -1,12 +1,6 @@
-import * as Y from 'yjs';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 
-import {
-  handleIncomingRedirect,
-  fetch,
-  getDefaultSession,
-  Session,
-} from '@inrupt/solid-client-authn-browser';
+import { fetch } from '@inrupt/solid-client-authn-browser';
 
 import {
   buildThing,
@@ -20,11 +14,7 @@ import {
   saveSolidDatasetAt,
   getSolidDataset,
   Url,
-  universalAccess,
   getSolidDatasetWithAcl,
-  getAgentAccessAll,
-  AgentAccess,
-  getUrlAll,
   getStringNoLocaleAll,
   getUrl,
   Thing,
