@@ -54,6 +54,11 @@ const TipTap = (props: Props) => {
         user: { name: getRandomName(), color: getRandomColor() },
       }),
     ],
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm p-1 rounded-md focus:outline-none',
+      },
+    },
   });
 
   return (
