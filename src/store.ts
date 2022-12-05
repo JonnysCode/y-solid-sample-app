@@ -38,15 +38,10 @@ export type Project = {
   tasks: Task[];
 };
 
-const fileName = 'projects2';
+const fileName = 'projects3';
 
 export const globalStore = syncedStore({
-  projects: [
-    {
-      title: 'Project 1',
-      tasks: [emptyTask()],
-    },
-  ] as Project[],
+  projects: [] as Project[],
   todos: [] as Todos[],
 });
 
