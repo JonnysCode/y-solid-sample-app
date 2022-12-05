@@ -1,8 +1,8 @@
 import { useSyncedStores } from '@syncedstore/react';
 import { useState } from 'react';
-import { globalStore, Todo } from '../store';
+import { globalStore, Todos } from '../store';
 
-export function TodoItem(props: { todo: Todo }) {
+export function TodoItem(props: { todo: Todos }) {
   const [todo, store] = useSyncedStores(
     [props.todo, globalStore],
     [props.todo]

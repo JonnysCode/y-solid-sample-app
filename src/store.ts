@@ -1,4 +1,9 @@
-import { getYjsValue, syncedStore, getYjsDoc } from '@syncedstore/core';
+import {
+  getYjsValue,
+  syncedStore,
+  getYjsDoc,
+  SyncedXml,
+} from '@syncedstore/core';
 import * as Y from 'yjs';
 import * as awarenessProtocol from 'y-protocols/awareness.js';
 import { WebrtcProvider } from 'y-webrtc';
@@ -9,14 +14,42 @@ import {
   getPublicAccessInfo,
 } from './solid';
 
-export type Todo = {
+export type Todos = {
   title: string;
   completed: boolean;
 };
 
-const fileName = 'todos3';
+export type Task = {
+  title: string;
+  fragment: SyncedXml;
+  completed: boolean;
+};
 
-export const globalStore = syncedStore({ todos: [] as Todo[] });
+export const emptyTask = (): Task => {
+  return {
+    title: '',
+    fragment: new SyncedXml(),
+    completed: false,
+  };
+};
+
+export type Project = {
+  title: string;
+  tasks: Task[];
+};
+
+const fileName = 'projects2';
+
+export const globalStore = syncedStore({
+  projects: [
+    {
+      title: 'Project 1',
+      tasks: [emptyTask()],
+    },
+  ] as Project[],
+  todos: [] as Todos[],
+});
+
 const doc = getYjsDoc(globalStore);
 
 const indexeddbPersistence = new IndexeddbPersistence(fileName, doc);
@@ -65,7 +98,12 @@ export const access = async () => {
   //accessControl();
 };
 
-let webRtcProvider;
+const connection = solidPersistence.getWebRtcConnection();
+
+export const webrtcProvider = new WebrtcProvider(connection.room, doc);
+
+export const webrtcDisconnect = () => webrtcProvider.disconnect();
+export const webrtcConnect = () => webrtcProvider.connect();
 
 export const addWebRtc = () => {
   const connection = solidPersistence.getWebRtcConnection();
@@ -79,16 +117,18 @@ export const addWebRtc = () => {
       filterBcConns: null,
       peerOpts: null,
     });
+
+
     */
-    webRtcProvider = new WebrtcProvider(connection.room, doc);
+    let webrtc = new WebrtcProvider(connection.room, doc);
 
     console.log('WebRTC connection added', connection);
 
-    webRtcProvider.on('synced', (event: any) => {
+    webrtc.on('synced', (event: any) => {
       console.log('synced', event.status);
     });
 
-    webRtcProvider.on('peers', (event: any) => {
+    webrtc.on('peers', (event: any) => {
       console.log('peers', event.status);
     });
   }

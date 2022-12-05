@@ -445,7 +445,7 @@ export class SolidPersistence extends Observable<string> {
     }
   }
 
-  public getWebRtcConnection(): WebRtcConnection | null {
+  public getWebRtcConnection(): WebRtcConnection {
     if (this.loggedIn && this.dataset) {
       // try to get a connection from the pod
       let connection = this.dataset.getWebRtcConnection();
@@ -459,8 +459,10 @@ export class SolidPersistence extends Observable<string> {
 
       return connection;
     } else {
-      console.log('Cannot get WebRTC connection - not logged in');
-      return null;
+      console.log(
+        '[SolidProvider] not logged in - creating a random WebRTC connection'
+      );
+      return randomWebRtcConnection();
     }
   }
 
