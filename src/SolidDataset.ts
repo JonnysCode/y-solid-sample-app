@@ -199,20 +199,22 @@ export class SolidDataset {
   }
 
   public static async create(name: string, url: string, webId: string) {
-    let dataset, value, thing;
+    let dataset, thing, value;
 
     dataset = await loadDataset(url, false);
 
     if (dataset) {
       thing = getYDocThing(dataset, url, name);
       if (thing) {
-        value = getYDocValue(thing);
+        value = getYDocValue(thing) || new Uint8Array();
       }
     } else {
       dataset = createSolidDataset();
     }
 
-    if (!value) {
+    if (thing) {
+      value = getYDocValue(thing) || new Uint8Array();
+    } else {
       value = new Uint8Array();
       thing = newYDocThing(name, value, webId);
       dataset = setThing(dataset, thing);
@@ -295,8 +297,11 @@ export class SolidDataset {
   public addWebRtcConnection = async (
     connection: WebRtcConnection = randomWebRtcConnection()
   ): Promise<WebRtcConnection> => {
+    await this.fetch();
+
     this.thing = addWebRtcConnection(this.thing, connection);
     this.resource = setThing(this.resource, this.thing);
+
     await this.save();
 
     return connection;

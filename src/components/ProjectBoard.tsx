@@ -5,7 +5,7 @@ import { filterArray } from '@syncedstore/core';
 import { useSyncedStore } from '@syncedstore/react';
 import React, { useState } from 'react';
 import Solid from './solid';
-import { globalStore, Project, Task } from '../store';
+import { emptyTask, globalStore, Project, Task } from '../store';
 import { TodoList } from './TodoList';
 
 type Props = {
@@ -15,6 +15,13 @@ type Props = {
 const ProjectBoard = (props: Props) => {
   const store = useSyncedStore(globalStore);
 
+  const addProject = () => {
+    store.projects.push({
+      title: 'New Project',
+      tasks: [emptyTask()],
+    });
+  };
+
   return (
     <div className={props.className}>
       <div className='flex flex-row m-2 divide-x divide-gray-900/20'>
@@ -22,7 +29,10 @@ const ProjectBoard = (props: Props) => {
           <ProjectItem key={project.title + i} project={project} />
         ))}
         <div className='flex flex-col h-full items-center justify-center p-2'>
-          <button className='border-solid border-2 border-gray-900/80 rounded-full p-1 shadow-lg hover:bg-gray-900/20'>
+          <button
+            className='border-solid border-2 border-gray-900/80 rounded-full p-1 shadow-lg hover:bg-gray-900/20'
+            onClick={() => addProject()}
+          >
             <PlusIcon className='h-8 w-8 text-gray-900/80' />
           </button>
         </div>
