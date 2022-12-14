@@ -21,15 +21,15 @@ const Login = () => {
 
   return (
     <div className='h-screen w-screen bg-main'>
-      <div className='h-full w-full flex flex-col items-center justify-center bg-hexagon2'>
+      <div className='h-full w-full flex flex-col items-center justify-center'>
         <img
           className='h-28 m-[-56px] z-40'
           src='./assets/images/solid-logo.svg'
           alt='logo'
         />
         <div className='max-w-sm'>
-          <Card className='w-80'>
-            <h5 className='mb-2 mt-10 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white'>
+          <div className='w-80 card'>
+            <h5 className='mb-4 mt-12 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white'>
               SOLID Login
             </h5>
             <form className='flex flex-col gap-4'>
@@ -43,16 +43,17 @@ const Login = () => {
                   value={provider}
                   onChange={(e) => setProvider(e.target.value)}
                   required={true}
+                  className='border-main'
                 />
               </div>
-              <Button
-                gradientDuoTone='purpleToBlue'
+              <div
                 onClick={() => handleLogin(provider)}
+                className='btn-primary'
               >
                 Log in
-              </Button>
+              </div>
             </form>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

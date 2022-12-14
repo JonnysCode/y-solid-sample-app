@@ -4,19 +4,27 @@
 
 @layer components {
   .btn-primary {
-    @apply text-white font-bold px-4 py-2 rounded bg-primary-600 hover:bg-primary-500;
-  }
-
-  .btn-outline-neutral {
-    @apply text-neutral-400 font-bold px-4 py-2 rounded border-2 border-neutral-400 hover:bg-neutral-400 hover:text-neutral-900;
+    @apply text-black inline-block align-middle text-center text-base font-bold px-4 py-2 shadow-full_sm rounded-lg bg-neutral border-2 border-black hover:bg-primary hover:text-neutral;
   }
 
   .btn-sm {
     @apply px-3 py-1.5 text-sm;
   }
 
+  .card {
+    @apply bg-neutral rounded-xl border-2 border-black shadow-full p-4;
+  }
+
   .bg-main {
-    @apply bg-gradient-to-br from-teal-300 to-lime-200;
+    background-color: #f7f4f1;
+    opacity: 0.8;
+    background-image: linear-gradient(#d3cfca 1px, transparent 1px),
+      linear-gradient(to right, #d3cfca 1px, #f7f4f1 1px);
+    background-size: 20px 20px;
+  }
+
+  .border-main {
+    @apply border-black border-2 rounded-lg;
   }
 }
 
