@@ -3,8 +3,20 @@
 @tailwind utilities;
 
 @layer components {
-  .btn-primary {
+  .btn {
     @apply text-black inline-block align-middle text-center text-base font-bold px-4 py-2 shadow-full_sm rounded-lg bg-neutral border-2 border-black hover:bg-primary hover:text-neutral;
+  }
+
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark hover:text-neutral;
+  }
+
+  .btn-accent {
+    @apply bg-accent hover:bg-accent-dark;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary-dark;
   }
 
   .btn-sm {
