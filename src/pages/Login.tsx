@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Card, Label, TextInput } from 'flowbite-react';
 import { useEffect, useState } from 'react';
-import { login } from '../store';
+import { login } from '../store/store';
 import { useSession } from '@inrupt/solid-ui-react';
 
 const Login = () => {

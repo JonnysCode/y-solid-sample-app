@@ -1,7 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
 // @ts-ignore
 import { EditorContent, useEditor } from '@tiptap/react';
-import { Editor } from '@tiptap/core';
 // @ts-ignore
 import StarterKit from '@tiptap/starter-kit';
 // @ts-ignore
@@ -10,7 +8,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 
-import { globalStore, Task, webrtcProvider } from '../store';
+import { globalStore, Task, webrtcProvider } from '../store/store';
 import { useSyncedStores } from '@syncedstore/react';
 
 const colors = [
@@ -35,10 +33,7 @@ interface Props {
 }
 
 const TipTap = (props: Props) => {
-  const [task, store] = useSyncedStores(
-    [props.task, globalStore],
-    [props.task]
-  );
+  const [task] = useSyncedStores([props.task, globalStore], [props.task]);
 
   const editor = useEditor({
     extensions: [

@@ -1,8 +1,12 @@
 import React from 'react';
 
 import { Button, Card, TextInput } from 'flowbite-react';
-import { Collaborator } from '../solid';
-import { addReadAccess, addWriteAccess, getCollaborators } from '../store';
+import { Collaborator } from '../store/solid';
+import {
+  addReadAccess,
+  addWriteAccess,
+  getCollaborators,
+} from '../store/store';
 
 const Collaborators = () => {
   const [webId, setWebId] = React.useState('');

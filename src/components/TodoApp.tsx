@@ -2,7 +2,7 @@ import { filterArray } from '@syncedstore/core';
 import { useSyncedStore } from '@syncedstore/react';
 import React, { useState } from 'react';
 import Solid from './solid';
-import { globalStore } from '../store';
+import { globalStore } from '../store/store';
 import { TodoList } from './TodoList';
 
 function TodoApp() {

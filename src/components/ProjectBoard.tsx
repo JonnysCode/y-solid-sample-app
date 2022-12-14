@@ -1,9 +1,9 @@
 import { PlusIcon } from '@heroicons/react/24/solid';
 import TipTap from './TipTap';
 import { useSyncedStore, useSyncedStores } from '@syncedstore/react';
-import { emptyTask, globalStore, Project, Task } from '../store';
+import { emptyTask, globalStore, Project, Task } from '../store/store';
 import { ArrowsPointingOutIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { Button, Modal } from 'flowbite-react';
+import { Modal } from 'flowbite-react';
 import { useState } from 'react';
 
 type Props = {
