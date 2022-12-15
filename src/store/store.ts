@@ -87,11 +87,18 @@ export const access = async () => {
 };
 
 const connection = solidPersistence.getWebRtcConnection();
+console.log('Adding WebRTC connection:', connection);
 
 export const webrtcProvider = new WebrtcProvider(connection.room, doc);
 
-export const webrtcDisconnect = () => webrtcProvider.disconnect();
-export const webrtcConnect = () => webrtcProvider.connect();
+export const webrtcDisconnect = () => {
+  webrtcProvider.disconnect();
+  console.log('WebRTC disconnected', webrtcProvider);
+};
+export const webrtcConnect = () => {
+  webrtcProvider.connect();
+  console.log('WebRTC connected', webrtcProvider);
+};
 
 export const addWebRtc = () => {
   const connection = solidPersistence.getWebRtcConnection();

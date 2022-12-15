@@ -3,6 +3,7 @@
   "version": "0.4.2",
   "private": true,
   "dependencies": {
+    "@headlessui/react": "^1.7.5",
     "@heroicons/react": "^2.0.13",
     "@inrupt/lit-generated-vocab-common": "^0.3.11",
     "@inrupt/solid-client-authn-node": "^1.12.2",

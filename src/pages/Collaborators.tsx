@@ -15,11 +15,11 @@ const Collaborators = () => {
     <div className='h-full flex flex-col items-center justify-center gap-4'>
       <div className='max-w-sm'>
         <div className='card w-[400px] p-0 divide-y-2 divide-black overflow-hidden'>
-          <div className='h-7 bg-accent' />
+          <div className='h-7 bg-primary' />
 
           <div className='p-4'>
-            <div className='my-4 flex items-center justify-between'>
-              <h5 className='text-xl font-bold leading-none text-black'>
+            <div className='mb-4 mt-2 flex items-center justify-center'>
+              <h5 className='px-3 py-0.5 text-xl font-bold text-black bg-accent shadow-full_sm'>
                 Collaborators
               </h5>
             </div>
@@ -35,9 +35,9 @@ const Collaborators = () => {
             </ul>
           </div>
 
-          <div className='w-full my-4 p-4 flex flex-col justify-between'>
-            <div className='mb-4 flex items-center justify-between'>
-              <h5 className='text-xl font-bold leading-none text-black'>
+          <div className='w-full my-2 p-4 flex flex-col justify-between'>
+            <div className='mb-6 mt-2 flex items-center justify-center'>
+              <h5 className='px-3 py-0.5 text-xl font-bold text-black bg-accent shadow-full_sm'>
                 Access Control
               </h5>
             </div>
@@ -57,7 +57,7 @@ const Collaborators = () => {
               <div className='flex flex-row gap-4 w-full justify-between'>
                 <div className=''>
                   <div
-                    className='btn btn-primary'
+                    className='btn btn-secondary'
                     onClick={() => {
                       addWriteAccess(webId);
                       setWebId('');
@@ -68,7 +68,7 @@ const Collaborators = () => {
                 </div>
                 <div className=''>
                   <div
-                    className='btn btn-primary'
+                    className='btn btn-secondary'
                     onClick={() => {
                       addReadAccess(webId);
                       setWebId('');

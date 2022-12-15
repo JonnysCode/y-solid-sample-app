@@ -14,7 +14,7 @@ const MySidebar = (props) => {
   return (
     <div className={props.className}>
       <div className='flex flex-col w-16 h-full bg-neutral items-center'>
-        <div className='flex-0 mt-2'>
+        <div className='flex-0 mt-6'>
           <img src='logo512.png' alt='logo' className='h-12 w-12' />
         </div>
 

@@ -7,6 +7,7 @@ import { Modal } from 'flowbite-react';
 import { useState } from 'react';
 
 import { BiX, BiPlus } from 'react-icons/bi';
+import Toggle from './Toggle';
 
 type Props = {
   className?: string;
@@ -25,10 +26,12 @@ const ProjectBoard = (props: Props) => {
   return (
     <div className={props.className}>
       <div className='flex flex-row items-center justify-between'>
-        <h1 className='grow-0 m-4 py-0.5 px-4 text-3xl font-bold underline text-black bg-accent shadow-full_sm'>
+        <h1 className='grow-0 m-4 py-0.5 px-4 text-3xl font-bold text-black bg-accent shadow-full_sm'>
           Task Board
         </h1>
-        <div className='flex flex-row gap-4 m-4'></div>
+        <div className='flex flex-row gap-4 m-4'>
+          <Toggle />
+        </div>
       </div>
 
       <div className='flex grow'>

@@ -22,30 +22,30 @@ const ProfileCard = () => {
   return (
     <div className='max-w-sm'>
       <CombinedDataProvider datasetUrl={webId} thingUrl={webId}>
-        <Card className='justify'>
-          <div className='flex flex-col items-center gap-4'>
+        <div className='card w-[400px] p-0 divide-y-2 divide-black overflow-hidden'>
+          <div className='h-7 bg-primary' />
+
+          <div className='flex flex-col items-center p-4 gap-4'>
             <div className='w-96' />
             <img
-              className='mb-3 h-24 w-24 rounded-full shadow-lg'
-              src='https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png'
+              className='mb-3 p-1 h-24 w-24 rounded-full shadow-full_sm border-main bg-neutral-dark'
+              src='assets/images/fifties.png'
               alt='Profile'
             />
-            <h5 className='mb-1 text-xl font-medium text-gray-900 dark:text-white'>
+            <h5 className='mb-1 px-3 text-xl font-bold text-black bg-accent shadow-full_sm'>
               <Text property={FOAF.name.iri.value} edit={false} autosave />
             </h5>
-            <div className='text-sm text-gray-500 dark:text-gray-400'>
+            <div className='text-sm text-black'>
               <span className='font-bold'>webid:</span> {session.info.webId}
             </div>
             <LogoutButton
               onError={console.error}
               onLogout={() => window.location.reload()}
             >
-              <Button outline={true} gradientDuoTone='purpleToBlue'>
-                Log out
-              </Button>
+              <div className='btn btn-secondary'>Log out</div>
             </LogoutButton>
           </div>
-        </Card>
+        </div>
       </CombinedDataProvider>
     </div>
   );
