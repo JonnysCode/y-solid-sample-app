@@ -51,7 +51,7 @@ const TipTap = (props: Props) => {
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-sm p-1 rounded-md focus:outline-none',
+        class: 'prose prose-neutral prose-sm p-1 rounded-md focus:outline-none',
       },
     },
   });
