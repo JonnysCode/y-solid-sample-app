@@ -26,7 +26,7 @@ const ProjectBoard = (props: Props) => {
   return (
     <div className={props.className}>
       <div className='flex flex-row items-center justify-between'>
-        <h1 className='grow-0 m-4 py-0.5 px-4 text-3xl font-bold text-black bg-accent shadow-full_sm'>
+        <h1 className='grow-0 m-4 py-0.5 px-4 text-3xl text-black font-bold bg-accent shadow-full_sm'>
           Task Board
         </h1>
         <div className='flex flex-row gap-4 m-4'>
@@ -75,7 +75,7 @@ const ProjectItem = (props: { project: Project }) => {
       <div className='flex flex-row w-full mb-4 justify-between items-center gap-4 '>
         <input
           type='text'
-          className='form-input appearance-none w-52 text-xl font-semibold text-black bg-transparent py-1 px-2 
+          className='form-input appearance-none w-52 text-xl font-semibold font-sans text-black bg-transparent py-1 px-2 
               rounded-lg border-none caret-gray-900/50 focus:text-gray-900 focus:border-neutral-700 focus:outline-none'
           defaultValue={project.title}
           onChange={(e) => (project.title = e.target.value)}

@@ -1,10 +1,22 @@
 @tailwind base;
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-sans;
+  }
+}
+
 @tailwind components;
 @tailwind utilities;
 
 @layer components {
   .btn {
-    @apply text-black inline-block align-middle text-center text-base font-bold px-4 py-2 shadow-full_sm rounded-lg bg-neutral border-2 border-black hover:bg-primary hover:text-neutral;
+    @apply text-black inline-block align-middle text-center text-base font-sans font-bold px-4 py-2 shadow-full_sm rounded-lg bg-neutral border-2 border-black hover:bg-primary hover:text-neutral;
   }
 
   .btn-primary {

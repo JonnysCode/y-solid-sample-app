@@ -1,4 +1,4 @@
-const colors = require('tailwindcss/colors');
+const defaultTheme = require('tailwindcss/defaultTheme');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -39,6 +39,9 @@ module.exports = {
       boxShadow: {
         full: '-8px 8px black',
         full_sm: '-4px 4px black',
+      },
+      fontFamily: {
+        sans: ['Space\\ Grotesk', 'Georgia', ...defaultTheme.fontFamily.sans],
       },
     },
   },
