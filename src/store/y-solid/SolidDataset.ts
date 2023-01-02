@@ -117,9 +117,7 @@ const getContributors = (thing: Thing) => {
 };
 
 const isContributor = (thing: Thing, webId: string) => {
-  const contributors = getContributors(thing);
-  console.log('contributors', contributors);
-  return contributors.includes(webId);
+  return getContributors(thing).includes(webId);
 };
 
 const getCreator = (thing: Thing) => {
@@ -127,13 +125,22 @@ const getCreator = (thing: Thing) => {
 };
 
 const isCreator = (thing: Thing, webId: string) => {
-  const creator = getCreator(thing);
-  console.log('creator', creator);
-  return creator === webId;
+  return getCreator(thing) === webId;
 };
 
 const addContributorToThing = (thing: Thing, webId: string): Thing => {
   return setStringNoLocale(thing, DCTERMS.contributor, webId);
+};
+
+const addContributorToDataset = async (
+  dataset: any,
+  datasetUrl: string | Url,
+  thing: Thing,
+  webId: string
+): Promise<void> => {
+  thing = addContributorToThing(thing, webId);
+  dataset = setThing(dataset, thing);
+  await saveDataset(dataset, datasetUrl);
 };
 
 const getYDocThing = (
@@ -146,7 +153,6 @@ const getYDocThing = (
 
 const getYDocValue = (thing: Thing) => {
   const value = getStringNoLocale(thing, SCHEMA_INRUPT.value);
-
   return value ? toUint8Array(value) : null;
 };
 
@@ -195,15 +201,16 @@ export class SolidDataset {
 
     if (dataset) {
       thing = getYDocThing(dataset, url, name);
-      if (thing) {
-        value = getYDocValue(thing) || new Uint8Array();
-      }
     } else {
       dataset = createSolidDataset();
     }
 
     if (thing) {
       value = getYDocValue(thing) || new Uint8Array();
+
+      if (!isContributor(thing, webId) && !isCreator(thing, webId)) {
+        addContributorToDataset(dataset, url, thing, webId);
+      }
     } else {
       value = new Uint8Array();
       thing = newYDocThing(name, value, webId);
@@ -211,25 +218,13 @@ export class SolidDataset {
       await saveDataset(dataset, url);
     }
 
-    if (thing && !isContributor(thing, webId) && !isCreator(thing, webId)) {
-      thing = addContributorToThing(thing, webId);
-      dataset = setThing(dataset, thing);
-      await saveDataset(dataset, url);
-    }
-
     return new SolidDataset(name, url, dataset, thing, value);
   }
 
-  public fetch = async (): Promise<Uint8Array | null> => {
+  public fetch = async (): Promise<void> => {
     this.resource = await loadDataset(this.url, false);
     this.thing = getYDocThing(this.resource, this.url, this.name);
-
-    let value = getYDocValue(this.thing);
-    if (value) {
-      this.value = value;
-    }
-
-    return value;
+    this.value = getYDocValue(this.thing) || this.value;
   };
 
   public update = async (value: Uint8Array): Promise<void> => {
@@ -247,10 +242,10 @@ export class SolidDataset {
   public fetchAndUpdate = async (
     applyFetch: (value: Uint8Array) => void,
     applyUpdate: () => void,
-    getValue: () => Uint8Array
+    getValue: () => Uint8Array,
+    maxTries = 5
   ): Promise<void> => {
     let isSynced = false;
-    let maxTries = 5;
 
     while (!isSynced && maxTries > 0) {
       console.log(

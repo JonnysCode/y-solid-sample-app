@@ -5,7 +5,7 @@ import {
   SolidPersistence,
   login as solidLogin,
   getPublicAccessInfo,
-} from './solid';
+} from './y-solid/SolidPersistance';
 
 export type Todos = {
   title: string;

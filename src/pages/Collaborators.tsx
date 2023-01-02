@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Button, Card, TextInput } from 'flowbite-react';
-import { Collaborator } from '../store/solid';
+import { Collaborator } from '../store/y-solid/SolidPersistance';
 import {
   addReadAccess,
   addWriteAccess,

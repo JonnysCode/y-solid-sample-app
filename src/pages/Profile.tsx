@@ -4,7 +4,6 @@ import {
   LogoutButton,
   Text,
 } from '@inrupt/solid-ui-react';
-import { Button, Card } from 'flowbite-react';
 import { FOAF } from '@inrupt/lit-generated-vocab-common';
 
 const Profile = () => {

@@ -220,7 +220,7 @@ export class SolidPersistence extends Observable<string> {
   public updateInterval: number;
 
   private isUpdating: boolean;
-  private furtherUpdates: any[];
+  private updates: any[];
   private requiresFetch: boolean;
   private isFetching: boolean;
 
@@ -245,7 +245,7 @@ export class SolidPersistence extends Observable<string> {
     this.loggedIn = this.session.info.isLoggedIn;
 
     this.isUpdating = false;
-    this.furtherUpdates = [];
+    this.updates = [];
     this.isFetching = false;
     this.requiresFetch = false;
 
@@ -273,30 +273,20 @@ export class SolidPersistence extends Observable<string> {
     }
 
     this.doc.on('update', (update, origin) => {
-      console.log(
-        '[YDoc] Origin of update: ',
-        origin === this ? 'local' : 'remote',
-        !origin ? 'and null' : ''
-      );
-
-      // TODO: Filter out updates that are not relevant to this provider
-      // Should we ignore updates from webRtc provider
-      // -> only from this client
-      // -> only when not collaborator in Solid
       if (origin !== this) {
-        this.furtherUpdates.push(update);
+        this.updates.push(update);
       }
     });
 
     syncInterval(async () => {
-      if (this.furtherUpdates.length > 0) {
+      if (this.updates.length > 0) {
         this.isUpdating = true;
         console.log(
           '[Solid] Processing ',
-          this.furtherUpdates.length,
+          this.updates.length,
           'queued updates'
         );
-        await this.update(this.furtherUpdates.splice(0));
+        await this.update(this.updates.splice(0));
 
         // if there are any notifications during the update, fetch the latest pod state
         if (this.requiresFetch) {
@@ -311,36 +301,15 @@ export class SolidPersistence extends Observable<string> {
       }
     }, updateInterval);
 
-    this.on('update2', async (update: Uint8Array, origin: any) => {
-      console.log('[Solid] Update received from ', origin);
-      await this.update([update]);
-      console.log('[Solid] Update complete');
-
-      // if there are more updates in the meantime, update to the latest state
-      while (this.furtherUpdates.length > 0) {
-        console.log(
-          '[Solid] applying ' + this.furtherUpdates.length + ' further updates'
-        );
-        await this.update(this.furtherUpdates.splice(0));
-      }
-
-      // if there are more notifications in the meantime, fetch the latest pod state
-      if (this.requiresFetch) {
-        console.log('[Solid] Additional fetching required');
-        await this.fetch();
-      }
-
-      this.isUpdating = false;
-    });
-
     this.emit('created', [this]);
   }
 
   public static async create(
     name: string,
     doc: Y.Doc,
-    autoLogin = true,
+    autoLogin = false,
     resourceUrl = `${POD_URL}/yjs/docs`,
+    socketUrl = 'wss://inrupt.net/',
     updateInterval: number = 10000
   ): Promise<SolidPersistence> {
     // LOGIN
@@ -374,8 +343,7 @@ export class SolidPersistence extends Observable<string> {
     if (dataset.value.length > 0) Y.applyUpdate(doc, dataset.value, this);
     await dataset.update(Y.encodeStateAsUpdate(doc));
 
-    // CONNECT TO NOTIFICATIONS
-    let websocket = openSolidWebSocket(resourceUrl, 'wss://inrupt.net/');
+    let websocket = openSolidWebSocket(resourceUrl, socketUrl);
 
     return new SolidPersistence(
       name,
@@ -414,8 +382,8 @@ export class SolidPersistence extends Observable<string> {
     this.isFetching = true;
 
     if (this.loggedIn && this.dataset) {
-      let value = await this.dataset.fetch();
-      if (value) Y.applyUpdate(this.doc, value, this);
+      await this.dataset.fetch();
+      Y.applyUpdate(this.doc, this.dataset.value, this);
 
       console.log('Fetched from pod');
       this.requiresFetch = false;
@@ -447,13 +415,10 @@ export class SolidPersistence extends Observable<string> {
 
   public getWebRtcConnection(): WebRtcConnection {
     if (this.loggedIn && this.dataset) {
-      // try to get a connection from the pod
       let connection = this.dataset.getWebRtcConnection();
 
       if (!connection) {
-        // if there is no connection, create one
         connection = randomWebRtcConnection();
-        // and save it to the pod asynchroniously
         this.dataset.addWebRtcConnection(connection);
       }
 
