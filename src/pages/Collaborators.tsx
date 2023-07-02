@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Button, Card, TextInput } from 'flowbite-react';
-import { Collaborator } from '../store/y-solid/SolidPersistance';
+/*import { Collaborator } from '../store/y-solid/SolidPersistance';
 import {
   addReadAccess,
   addWriteAccess,
@@ -114,4 +114,4 @@ const UserItem = (props: UserCardProps) => {
   );
 };
 
-export default Collaborators;
+export default Collaborators;*/

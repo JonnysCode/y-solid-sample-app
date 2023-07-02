@@ -38,6 +38,7 @@
     "react-scripts": "5.0.1",
     "typescript": "^4.4.4",
     "y-indexeddb": "^9.0.9",
+    "y-solid": "^0.1.5",
     "y-webrtc": "^10.1.8",
     "yjs": "^13.5.13"
   },

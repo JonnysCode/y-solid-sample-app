@@ -1,11 +1,7 @@
 import { syncedStore, getYjsDoc, SyncedXml } from '@syncedstore/core';
 import { WebrtcProvider } from 'y-webrtc';
 import { IndexeddbPersistence } from 'y-indexeddb';
-import {
-  SolidPersistence,
-  login as solidLogin,
-  getPublicAccessInfo,
-} from './y-solid/SolidPersistance';
+import { SolidPersistence } from 'y-solid';
 
 export type Todos = {
   title: string;
@@ -46,14 +42,18 @@ indexeddbPersistence.on('synced', () => {
   console.log('content from the database is loaded');
 });
 
-const solidPersistence = await SolidPersistence.create(fileName, doc, false);
+const solidPersistence = await SolidPersistence.create(
+  fileName,
+  doc,
+  false,
+  'https://storage.inrupt.com/e1ea7746-4998-4493-a241-45860d9427bb//yjs/docs'
+);
 
 export const solid = () => {
   console.log('solid', solidPersistence);
 };
 
 export const login = async (oidcIssuer: string) => {
-  await solidLogin(oidcIssuer);
   console.log('awaited login');
 };
 
@@ -80,7 +80,7 @@ export const datasetInfo = () => {
 
 export const access = async () => {
   //await setAgentAccess();
-  getPublicAccessInfo();
+  //getPublicAccessInfo();
   //getAgentAccessInfo();
   //await setAccessWAC();
   //accessControl();
