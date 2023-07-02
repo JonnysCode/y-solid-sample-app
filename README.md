@@ -1,8 +1,17 @@
 # Sample Web Application with y-solid Provider
 
-This repository contains a sample web application that demonstrates the usage of the "y-solid" provider, which is an extension to Yjs. The "y-solid" provider adds access control, decentralized backup data storage in a private data pod, and provides discoverability and availability for collaborative data.
+This repository contains a sample web application that demonstrates the usage of the [y-solid](https://github.com/JonnysCode/y-solid)
+ provider, which is an extension to Yjs. The [y-solid](https://github.com/JonnysCode/y-solid) provider adds access control, decentralized backup data storage in a private data pod, and provides discoverability and availability for collaborative data.
 
 The web application in this repository is a collaborative task board app with solid authentication, user management, and access control. It is implemented using React as a Progressive Web Application (PWA), making it fully functional as a local-first application.
+
+## Screenshots
+
+| ![Login](screenshots/login.png)   | ![Task Board](screenshots/task-board.png) |
+| --------------------------------- | ----------------------------------------- |
+| Login                             | Task Board                                |
+| ![Access](screenshots/access.png) | ![Profile](screenshots/profile.png)       |
+| Access Control                    | Profile                                   |
 
 ## Features
 
@@ -12,13 +21,6 @@ The web application in this repository is a collaborative task board app with so
 - Access control: The "y-solid" provider integrates access control mechanisms, ensuring that only authorized users can access and modify the collaborative data.
 - Decentralized backup data storage: Collaborative data is stored in a private data pod, ensuring data resilience and availability even if the primary server goes down.
 
-## Screenshots
-
-| ![Login](screenshots/login.png)   | ![Task Board](screenshots/task-board.png) |
-| --------------------------------- | ----------------------------------------- |
-| Login                             | Task Board                                |
-| ![Access](screenshots/access.png) | ![Profile](screenshots/profile.png)       |
-| Access Control                    | Profile                                   |
 
 ## Installation
 
